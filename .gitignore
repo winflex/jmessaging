@@ -1,0 +1,14 @@
+# eclipse
+.project
+.classpath
+.settings
+bin
+
+# maven
+target
+
+# compression
+.tar
+.gz
+.zip
+.jar
