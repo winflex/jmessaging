@@ -54,6 +54,18 @@
 			<artifactId>hessian-lite</artifactId>
 			<version>3.2.1-fixed-2</version>
 		</dependency>
+		<dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>bolt</artifactId>
+            <version>1.5.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>hessian</artifactId>
+            <version>3.3.6</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>
