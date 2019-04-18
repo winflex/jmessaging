@@ -1,21 +1,24 @@
 package messaging.client;
 
-import static messaging.util.TimeUtils.*;
+import static messaging.util.TimeUtils.currentTime;
+import static messaging.util.TimeUtils.elapsedMillis;
 
 import java.io.IOException;
-import java.util.Deque;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import messaging.util.Endpoint;
+import messaging.util.concurrent.NamedThreadFactory;
 
 /**
  * 连接池
@@ -24,36 +27,47 @@ import messaging.util.Endpoint;
  * @author winflex
  */
 public class ChannelGroup {
-
-	private final Deque<Channel> channels = new ConcurrentLinkedDeque<>();
-
-	private final int maxConnections;
-	private final Endpoint endpoint;
+	
+	private static final Logger logger = LoggerFactory.getLogger(ChannelGroup.class);
+	
+	private static final Executor reconnectExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("Reconnect-Thread"));
+	
 	private final Bootstrap bootstrap;
-
 	private final HealthChecker healthChecker;
+
+	private final AtomicReferenceArray<Channel> channels;
+	private final AtomicInteger index = new AtomicInteger();
+
 	private final AtomicBoolean closed = new AtomicBoolean();
 
-	// 正在创建的连接的数量
-	private final AtomicInteger connectingCount = new AtomicInteger();
-
-	public ChannelGroup(Endpoint endpoint, Bootstrap bootstrap, int maxConnections, HealthChecker healthChecker)
-			throws IOException {
+	public ChannelGroup(Bootstrap bootstrap, int maxConnections, HealthChecker healthChecker) throws IOException {
 		if (maxConnections <= 0) {
 			throw new IllegalArgumentException("maxConnections must be positive");
 		}
-		this.maxConnections = maxConnections;
-		this.endpoint = endpoint;
 		this.bootstrap = bootstrap;
 		this.healthChecker = healthChecker;
-
+		this.channels = new AtomicReferenceArray<>(maxConnections);
 		for (int i = 0; i < maxConnections; i++) {
-			channels.add(syncConnect());
+			connectAndSetChannel(i);
 		}
 	}
 
-	private Channel syncConnect() throws IOException {
-		ChannelFuture future = asyncConnect().syncUninterruptibly();
+	private void connectAndSetChannel(int index) throws IOException {
+		Channel ch = connect();
+		ch.closeFuture().addListener((f) -> {
+			reconnectExecutor.execute(() -> {
+				try {
+					connectAndSetChannel(index);
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			});
+		});
+		channels.set(index, ch);
+	}
+
+	private Channel connect() throws IOException {
+		ChannelFuture future = bootstrap.connect().syncUninterruptibly();
 		if (future.isSuccess()) {
 			return future.channel();
 		} else {
@@ -66,48 +80,23 @@ public class ChannelGroup {
 		}
 	}
 
-	private ChannelFuture asyncConnect() {
-		return bootstrap.connect(endpoint.getIp(), endpoint.getPort());
-	}
-
 	public Channel getChannel(int timeoutMillis) throws TimeoutException {
-		if (closed.get()) {
-			throw new IllegalStateException("Already closed");
-		}
-
-		final long startTime = currentTime();
-		do {
-			Channel channel = channels.poll();
-			if (channel == null) {
-				fill(maxConnections);
-				LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1));
-			} else if (!healthChecker.isHealthy(channel)) {
-				channel.close();
-				fill(1);
-			} else {
-				channels.offer(channel);
-				return channel;
+		final int total = channels.length();
+		final long start = currentTime();
+		for (int i = 0; elapsedMillis(start) < timeoutMillis; i++) {
+			Channel ch = channels.get(this.index.getAndIncrement() % total);
+			if (healthChecker.isHealthy(ch)) {
+				return ch;
 			}
-		} while (elapsedMillis(startTime) < timeoutMillis);
-		
-		throw new TimeoutException("get channel timed out after " + elapsedMillis(startTime) + "ms");
-	}
-
-	private synchronized void fill(final int need) {
-		int actualNeed = need - connectingCount.get(); // 减去已经在创建的数量
-		for (int i = 0; i < actualNeed; i++) {
-			connectingCount.incrementAndGet();
-			asyncConnect().addListener(new ChannelFutureListener() {
-
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					connectingCount.decrementAndGet();
-					if (future.isSuccess()) {
-						channels.offer(future.channel());
-					}
-				}
-			});
+			if (closed.get()) {
+				throw new IllegalStateException("Already closed");
+			}
+			if ((i & 0xff) == 0xff) {
+				LockSupport.parkNanos(10);
+			}
 		}
+
+		throw new TimeoutException("get channel timed out after " + elapsedMillis(start));
 	}
 
 	public void close() {
@@ -115,9 +104,8 @@ public class ChannelGroup {
 			return;
 		}
 
-		Channel ch;
-		while ((ch = channels.poll()) != null) {
-			ch.close();
+		for (int i = 0; i < channels.length(); i++) {
+			channels.get(i).close();
 		}
 	}
 

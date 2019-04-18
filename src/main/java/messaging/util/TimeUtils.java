@@ -14,11 +14,11 @@ public final class TimeUtils {
         return System.nanoTime();
     }
 
-    public static long elapsedMillis(final long startTime) {
-        return NANOSECONDS.toMillis(System.nanoTime() - startTime);
+    public static long elapsedMillis(final long startNanoTime) {
+        return NANOSECONDS.toMillis(System.nanoTime() - startNanoTime);
     }
 
-    public static long elapsedMillis(final long startTime, final long endTime) {
-        return NANOSECONDS.toMillis(endTime - startTime);
+    public static long elapsedMillis(final long startNanoTime, final long endNanoTime) {
+        return NANOSECONDS.toMillis(endNanoTime - startNanoTime);
     }
 }
