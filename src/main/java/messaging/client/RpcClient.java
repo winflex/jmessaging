@@ -78,7 +78,7 @@ public class RpcClient {
 	}
 
 	/**
-	 * 发送无响应的请求
+	 * 异步发送无响应的请求
 	 */
 	public <T extends Serializable> IFuture<Void> send(T data) {
 		final DefaultPromise<Void> promise = new DefaultPromise<>();
@@ -104,12 +104,24 @@ public class RpcClient {
 	}
 
 	/**
-	 * 发送需要响应的请求
+	 * 异步发送需要响应的请求, 返回的future将保证在timeoutMillis时间内完成(成功或失败)
 	 */
-	public <V, T extends Serializable> IFuture<V> request(T data) {
+	public <T extends Serializable, V extends Serializable> IFuture<V> requestAsync(T data, int timeoutMillis) {
+		return doRequest(data, timeoutMillis);
+	}
+	
+	/**
+	 * 同步发送需要响应的请求, 若请求超时, 那么返回null
+	 */
+	public <T extends Serializable, V extends Serializable> V requestSync(T data, int timeoutMillis) {
+		IFuture<V> f = doRequest(data, timeoutMillis);
+		return f.awaitUninterruptibly().getNow();
+	}
+	
+	private <T extends Serializable, V extends Serializable> IFuture<V> doRequest(T data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, false);
 		request.setSerializerCode(options.getSerializerCode());
-		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), options.getRequestTimeoutMillis());
+		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), timeoutMillis);
 		Channel ch = null;
 		try {
 			ch = channelGroup.getChannel(options.getConnectTimeoutMillis());

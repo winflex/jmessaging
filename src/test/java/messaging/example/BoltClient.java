@@ -14,7 +14,7 @@ public class BoltClient {
 		client.init();
 		LoadRunner lr = LoadRunner.builder().millis(30000).reportInterval(1000).threads(1).transaction(() -> {
 			try {
-				AddResponse res = (AddResponse) client.invokeSync("localhost:9999", req, 3000);
+				client.invokeSync("localhost:9999", req, 3000);
 			} catch (Exception e) {
 				// ignore
 			}

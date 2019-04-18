@@ -3,6 +3,7 @@ package messaging.example;
 import java.io.IOException;
 
 import messaging.client.RpcClient;
+import messaging.client.RpcClientOptions;
 import messaging.util.Endpoint;
 
 /**
@@ -11,10 +12,12 @@ import messaging.util.Endpoint;
  */
 public class BenchMarkClient {
 	public static void main(String[] args) throws IOException {
-		RpcClient client = new RpcClient(new Endpoint("localhost", 9999));
+		RpcClientOptions options = new RpcClientOptions(new Endpoint("10.8.1.84", 9999));
+		options.setMaxConnections(3);
+		RpcClient client = new RpcClient(options);
 		AddRequest req = new AddRequest(1, 2);
-		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(4).transaction(() -> {
-			client.request(req).awaitUninterruptibly();
+		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(64).transaction(() -> {
+			client.requestSync(req, 3000);
 		}).build();
 		lr.run();
 	}

@@ -1,9 +1,9 @@
 package messaging.example;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 
 import messaging.client.RpcClient;
+import messaging.client.RpcClientOptions;
 import messaging.util.Endpoint;
 
 /**
@@ -12,17 +12,10 @@ import messaging.util.Endpoint;
  */
 public class Client {
 	public static void main(String[] args) throws IOException, InterruptedException {
-		RpcClient client = new RpcClient(new Endpoint("localhost", 9999));
-		CountDownLatch latch = new CountDownLatch(1);
-		client.<AddResponse, AddRequest>request(new AddRequest(1, 2)).awaitUninterruptibly().addListener((f) -> {
-			if (f.isSuccess()) {
-				System.out.println(f.getNow().getValue());
-			} else {
-				f.cause().printStackTrace();
-			}
-			latch.countDown();
-		});
-		latch.await();
+		RpcClientOptions options = new RpcClientOptions(new Endpoint("localhost", 9999));
+		RpcClient client = new RpcClient(options);
+		AddResponse resp = client.requestSync(new AddRequest(1, 2), 3000);
+		System.out.println(resp.getValue());
 		client.close();
 	}
 }
