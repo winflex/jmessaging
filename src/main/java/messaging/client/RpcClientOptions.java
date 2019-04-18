@@ -36,9 +36,9 @@ public class RpcClientOptions {
 	private int maxConnections = 1;
 	
 	/**
-	 * 序列化扩展点名字, 默认使用kryo序列化
+	 * 序列化扩展点名字, 默认使用hessian序列化
 	 */
-	private String serializer = "hessian";
+	private byte serializerCode = 0;
 	
 	/**
 	 * 动态代理扩展点名字, 默认使用jdk
@@ -100,15 +100,12 @@ public class RpcClientOptions {
 		this.requestTimeoutMillis = invokeTimeoutMillis;
 	}
 
-	public String getSerializer() {
-		return serializer;
+	public byte getSerializerCode() {
+		return serializerCode;
 	}
 
-	public void setSerializer(String serializer) {
-		if (StringUtils.isEmpty(serializer)) {
-			throw new IllegalArgumentException("The serializer can't be null");
-		}
-		this.serializer = serializer;
+	public void setSerializerCode(byte serializerCode) {
+		this.serializerCode = serializerCode;
 	}
 
 	public String getProxy() {

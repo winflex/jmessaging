@@ -44,6 +44,7 @@ public class Context {
 	
 	public void writeResponse(Object data) {
 		final RpcMessage message = new RpcResponse(request.getId(), RpcResult.newSuccessResult(data));
+		message.setSerializerCode(request.getSerializerCode());
 		NettyUtils.writeAndFlush(channel, message);
 	}
 }

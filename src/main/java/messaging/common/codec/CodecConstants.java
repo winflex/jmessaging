@@ -6,9 +6,9 @@ package messaging.common.codec;
  */
 public interface CodecConstants {
 	
-	int HEADER_LENGTH = 15;
+	int HEADER_LENGTH = 17;
 	
-	int BODY_LENGTH_OFFSET = 11;
+	int BODY_LENGTH_OFFSET = 12;
 	
 	short MAGIC = (short) 0xebab;
 	

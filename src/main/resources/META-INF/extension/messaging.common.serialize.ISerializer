@@ -1,1 +1,1 @@
-hessian=messaging.common.serialize.HessianSerializer
+0=messaging.common.serialize.HessianSerializer

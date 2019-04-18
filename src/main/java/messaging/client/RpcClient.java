@@ -22,9 +22,7 @@ import messaging.client.ChannelGroup.HealthChecker;
 import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
 import messaging.common.protocol.RpcRequest;
-import messaging.common.serialize.ISerializer;
 import messaging.util.Endpoint;
-import messaging.util.ExtensionLoader;
 import messaging.util.NettyUtils;
 import messaging.util.concurrent.DefaultPromise;
 import messaging.util.concurrent.IFuture;
@@ -72,10 +70,8 @@ public class RpcClient {
 				});
 
 				ChannelPipeline pl = ch.pipeline();
-				ISerializer serializer = ExtensionLoader.getLoader(ISerializer.class)
-						.getExtension(options.getSerializer());
-				pl.addLast(new Decoder(serializer));
-				pl.addLast(new Encoder(serializer));
+				pl.addLast(new Decoder());
+				pl.addLast(new Encoder());
 				pl.addLast(new ResponseHandler());
 			}
 		});
@@ -90,6 +86,7 @@ public class RpcClient {
 		try {
 			Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
 			final RpcRequest request = new RpcRequest(data, true);
+			request.setSerializerCode(options.getSerializerCode());
 			NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
 
 				@Override
@@ -115,6 +112,7 @@ public class RpcClient {
 		try {
 			final Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
 			final RpcRequest request = new RpcRequest(data, false);
+			request.setSerializerCode(options.getSerializerCode());
 			NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
 
 				@Override

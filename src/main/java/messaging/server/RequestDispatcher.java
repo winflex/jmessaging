@@ -12,13 +12,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import messaging.common.RpcException;
 import messaging.common.RpcResult;
 import messaging.common.protocol.RpcMessage;
+import messaging.common.protocol.RpcRequest;
 import messaging.util.NettyUtils;
 
 /**
  * 
  * @author winflex
  */
-public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
+public class RequestDispatcher extends SimpleChannelInboundHandler<RpcRequest> {
 
 	private static final Logger logger = LoggerFactory.getLogger(RequestDispatcher.class);
 	
@@ -29,7 +30,7 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 	}
 
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, RpcMessage msg) throws Exception {
+	protected void channelRead0(ChannelHandlerContext ctx, RpcRequest msg) throws Exception {
 		Object request = msg.getData();
 		IRequestHandler<Object> handler = rpcServer.getHandler(request.getClass().getName());
 		if (handler == null) {
@@ -61,5 +62,4 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 		response.setData(RpcResult.newFailureResult(cause));
 		NettyUtils.writeAndFlush(ch, response);
 	}
-	
 }

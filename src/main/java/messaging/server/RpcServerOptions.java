@@ -29,11 +29,6 @@ public class RpcServerOptions {
 	 */
 	private int heartbeatInterval = 10000;
 
-	/**
-	 * 序列化扩展点名字, 默认使用kryo序列化
-	 */
-	private String serializer = "hessian";
-	
 	private Executor executor;
 
 	public RpcServerOptions(int port) {
@@ -73,17 +68,6 @@ public class RpcServerOptions {
 
 	public void setHeartbeatInterval(int heartbeatInterval) {
 		this.heartbeatInterval = heartbeatInterval;
-	}
-
-	public String getSerializer() {
-		return serializer;
-	}
-
-	public void setSerializer(String serializer) {
-		if (serializer == null) {
-			throw new IllegalArgumentException("The serializer can't be null");
-		}
-		this.serializer = serializer;
 	}
 	
 	public Executor getExecutor() {

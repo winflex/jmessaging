@@ -15,8 +15,16 @@ public class RpcMessage implements Serializable {
 
 	private byte type;
 	private long id;
-	private boolean oneWay; // 是否是单向请求
+	private byte serializerCode;
 	private Object data;
+
+	public byte getSerializerCode() {
+		return serializerCode;
+	}
+
+	public void setSerializerCode(byte serializerCode) {
+		this.serializerCode = serializerCode;
+	}
 
 	public byte getType() {
 		return type;
@@ -32,14 +40,6 @@ public class RpcMessage implements Serializable {
 
 	public void setId(long id) {
 		this.id = id;
-	}
-
-	public boolean isOneWay() {
-		return oneWay;
-	}
-
-	public void setOneWay(boolean oneWay) {
-		this.oneWay = oneWay;
 	}
 
 	public Object getData() {

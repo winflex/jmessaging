@@ -13,7 +13,6 @@ public class RpcResponse extends RpcMessage {
 	public RpcResponse(long requestId, RpcResult data) {
 		setId(requestId);
 		setData(data);
-		setOneWay(false);
 		setType(TYPE_RESPONSE);
 	}
 }

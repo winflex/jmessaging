@@ -24,8 +24,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
-import messaging.common.serialize.ISerializer;
-import messaging.util.ExtensionLoader;
 import messaging.util.concurrent.DefaultPromise;
 import messaging.util.concurrent.IFuture;
 import messaging.util.concurrent.NamedThreadFactory;
@@ -81,10 +79,8 @@ public class RpcServer {
 				});
 				ChannelPipeline pl = ch.pipeline();
 				pl.addLast(new IdleStateHandler(options.getHeartbeatInterval() * 2, 0, 0, TimeUnit.MILLISECONDS));
-				ISerializer serializer = ExtensionLoader.getLoader(ISerializer.class)
-						.getExtension(options.getSerializer());
-				pl.addLast(new Decoder(serializer));
-				pl.addLast(new Encoder(serializer));
+				pl.addLast(new Decoder());
+				pl.addLast(new Encoder());
 				pl.addLast(new RequestDispatcher(RpcServer.this));
 			}
 		});
