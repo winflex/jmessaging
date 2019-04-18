@@ -108,23 +108,24 @@ public class RpcClient {
 	 * 发送需要响应的请求
 	 */
 	public <V, T extends Serializable> IFuture<V> request(T data) {
-		final ResponseFuture<V> future = new ResponseFuture<>(options.getRequestTimeoutMillis());
+		final RpcRequest request = new RpcRequest(data, false);
+		request.setSerializerCode(options.getSerializerCode());
+		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), options.getRequestTimeoutMillis());
+		Channel ch = null;
 		try {
-			final Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
-			final RpcRequest request = new RpcRequest(data, false);
-			request.setSerializerCode(options.getSerializerCode());
-			NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
-
-				@Override
-				public void operationComplete(ChannelFuture channelFuture) throws Exception {
-					if (!channelFuture.isSuccess()) {
-						ResponseFuture.doneWithException(future.getRequestId(), channelFuture.cause());
-					}
-				}
-			});
+			ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
 		} catch (TimeoutException e) {
-			ResponseFuture.doneWithException(future.getRequestId(), e);
+			ResponseFuture.doneWithException(future.getFutureId(), e);
 		}
+		NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
+
+			@Override
+			public void operationComplete(ChannelFuture channelFuture) throws Exception {
+				if (!channelFuture.isSuccess()) {
+					ResponseFuture.doneWithException(future.getFutureId(), channelFuture.cause());
+				}
+			}
+		});
 		return future;
 	}
 

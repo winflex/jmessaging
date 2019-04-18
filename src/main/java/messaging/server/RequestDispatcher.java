@@ -40,7 +40,6 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcRequest> {
 			}
 		} else {
 			Executor executor = handler.getExecutor() == null ? rpcServer.getExecutor() : handler.getExecutor();
-
 			executor.execute(() -> {
 				try {
 					Context context = new Context(msg, ctx.channel(), executor);

@@ -7,7 +7,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,12 +54,12 @@ public class ResponseFuture<T> extends DefaultPromise<T> {
 
 	private final ScheduledFuture<?> timeoutFuture;
 
-	public ResponseFuture(int timeoutMillis) {
+	public ResponseFuture(long futureId, int timeoutMillis) {
 		if (timeoutMillis <= 0) {
 			throw new IllegalArgumentException("timeoutMillis must be positive");
 		}
 		
-		this.futureId = sequence.incrementAndGet();
+		this.futureId = futureId;
 		inflightFutures.put(futureId, this);
 		this.timeoutFuture = scheduler.schedule(() -> {
 			setFailure(new TimeoutException("timed out after " + timeoutMillis + "ms"));
@@ -71,9 +70,7 @@ public class ResponseFuture<T> extends DefaultPromise<T> {
 		timeoutFuture.cancel(true);
 	}
 
-	public final long getRequestId() {
+	public final long getFutureId() {
 		return futureId;
 	}
-	
-	private static final AtomicLong sequence = new AtomicLong();
 }
