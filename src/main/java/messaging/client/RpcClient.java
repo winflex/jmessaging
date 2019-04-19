@@ -19,19 +19,19 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import messaging.client.ChannelGroup.HealthChecker;
+import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
 import messaging.common.protocol.RpcRequest;
 import messaging.util.Endpoint;
 import messaging.util.NettyUtils;
-import messaging.util.concurrent.DefaultPromise;
 import messaging.util.concurrent.IFuture;
 import messaging.util.concurrent.NamedThreadFactory;
 
 /**
  * 
  * 
- * @author lixiaohui
+ * @author winflex
  */
 public class RpcClient {
 	private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
@@ -78,47 +78,65 @@ public class RpcClient {
 	}
 
 	/**
+	 * 同步发送无响应的请求
+	 */
+	public <T extends Serializable> void sendSync(T data, int timeoutMillis) throws RpcException {
+		IFuture<Void> future = sendAsync(data, timeoutMillis).awaitUninterruptibly();
+		if (!future.isSuccess()) {
+			if (future.cause() instanceof RpcException) {
+				throw (RpcException) future.cause();
+			} else {
+				throw new RpcException(future.cause());
+			}
+		}
+	}
+	
+	/**
 	 * 异步发送无响应的请求
 	 */
-	public <T extends Serializable> IFuture<Void> send(T data) {
-		final DefaultPromise<Void> promise = new DefaultPromise<>();
+	public <T extends Serializable> IFuture<Void> sendAsync(T data, int timeoutMillis) {
+		final RpcRequest request = new RpcRequest(data, true);
+		final ResponseFuture<Void> future = new ResponseFuture<>(request.getId(), timeoutMillis);
 		try {
 			Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
-			final RpcRequest request = new RpcRequest(data, true);
 			request.setSerializerCode(options.getSerializerCode());
 			NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
 
 				@Override
 				public void operationComplete(ChannelFuture channelFuture) throws Exception {
 					if (channelFuture.isSuccess()) {
-						promise.setSuccess(true);
+						future.setSuccess(true);
 					} else {
-						promise.setFailure(channelFuture.cause());
+						future.setFailure(channelFuture.cause());
 					}
 				}
 			});
 		} catch (TimeoutException e) {
-			promise.setFailure(e);
+			future.setFailure(e);
 		}
-		return promise;
+		return future;
+	}
+	
+	/**
+	 * 同步发送需要响应的请求, 若请求超时, 那么返回null
+	 */ 
+	public <T extends Serializable, V extends Serializable> V requestSync(T data, int timeoutMillis) throws RpcException {
+		IFuture<V> future = this.<T, V>requestAsync(data, timeoutMillis).awaitUninterruptibly();
+		if (future.isSuccess()) {
+			return future.getNow();
+		} else {
+			if (future.cause() instanceof RpcException) {
+				throw (RpcException) future.cause();
+			} else {
+				throw new RpcException(future.cause());
+			}
+		}
 	}
 
 	/**
 	 * 异步发送需要响应的请求, 返回的future将保证在timeoutMillis时间内完成(成功或失败)
 	 */
 	public <T extends Serializable, V extends Serializable> IFuture<V> requestAsync(T data, int timeoutMillis) {
-		return doRequest(data, timeoutMillis);
-	}
-	
-	/**
-	 * 同步发送需要响应的请求, 若请求超时, 那么返回null
-	 */
-	public <T extends Serializable, V extends Serializable> V requestSync(T data, int timeoutMillis) {
-		IFuture<V> f = doRequest(data, timeoutMillis);
-		return f.awaitUninterruptibly().getNow();
-	}
-	
-	private <T extends Serializable, V extends Serializable> IFuture<V> doRequest(T data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, false);
 		request.setSerializerCode(options.getSerializerCode());
 		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), timeoutMillis);
@@ -139,7 +157,7 @@ public class RpcClient {
 		});
 		return future;
 	}
-
+	
 	public void close() {
 		if (!closed.compareAndSet(false, true)) {
 			return;

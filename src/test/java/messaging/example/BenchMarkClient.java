@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import messaging.client.RpcClient;
 import messaging.client.RpcClientOptions;
+import messaging.common.RpcException;
 import messaging.util.Endpoint;
 
 /**
@@ -17,7 +18,12 @@ public class BenchMarkClient {
 		RpcClient client = new RpcClient(options);
 		AddRequest req = new AddRequest(1, 2);
 		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(64).transaction(() -> {
-			client.requestSync(req, 3000);
+			try {
+				client.requestSync(req, 3000);
+			} catch (RpcException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}).build();
 		lr.run();
 	}

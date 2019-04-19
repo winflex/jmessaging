@@ -1,7 +1,5 @@
 package messaging.example;
 
-import java.io.IOException;
-
 import messaging.client.RpcClient;
 import messaging.client.RpcClientOptions;
 import messaging.util.Endpoint;
@@ -11,7 +9,7 @@ import messaging.util.Endpoint;
  * @author winflex
  */
 public class Client {
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws Exception {
 		RpcClientOptions options = new RpcClientOptions(new Endpoint("localhost", 9999));
 		RpcClient client = new RpcClient(options);
 		AddResponse resp = client.requestSync(new AddRequest(1, 2), 3000);
