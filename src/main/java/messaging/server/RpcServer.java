@@ -24,6 +24,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
+import messaging.util.NettyUtils;
 import messaging.util.concurrent.DefaultPromise;
 import messaging.util.concurrent.IFuture;
 import messaging.util.concurrent.NamedThreadFactory;
@@ -36,7 +37,10 @@ public class RpcServer {
 	private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
 	private final RpcServerOptions options;
-	private final Executor executor;
+
+	// 两个executor只有一个有用
+	private ThreadPoolExecutor defaultExecutor; // 内部创建的executor
+	private Executor executor; // 外部创建的executor
 
 	private EventLoopGroup bossGroup;
 	private EventLoopGroup workerGroup;
@@ -53,22 +57,22 @@ public class RpcServer {
 
 	public RpcServer(RpcServerOptions options) {
 		this.options = options;
-		if (options.getExecutor() == null) {
-			executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2,
-					Runtime.getRuntime().availableProcessors() * 2, 1, TimeUnit.MINUTES,
-					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Exeecutor"));
-		} else {
-			executor = options.getExecutor();
-		}
 	}
 
 	public RpcServer start() throws RpcException {
+		if (executor == null) {
+			defaultExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2,
+					Runtime.getRuntime().availableProcessors() * 2, 1, TimeUnit.MINUTES,
+					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Exeecutor"));
+		}
+
 		this.bossGroup = new NioEventLoopGroup(1);
 		this.workerGroup = new NioEventLoopGroup(options.getIoThreads());
 
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workerGroup);
 		b.channel(NioServerSocketChannel.class);
+		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
 		b.childHandler(new ChannelInitializer<NioSocketChannel>() {
 
 			@Override
@@ -112,8 +116,8 @@ public class RpcServer {
 			workerGroup.shutdownGracefully();
 		}
 
-		if (options.getExecutor() == null) { // shutdown executor only if it was created by server
-			((ThreadPoolExecutor) executor).shutdownNow();
+		if (defaultExecutor != null) { // shutdown executor only if it was created by server
+			((ThreadPoolExecutor) defaultExecutor).shutdownNow();
 		}
 
 		logger.info("Server shutdown");
@@ -133,8 +137,16 @@ public class RpcServer {
 		return (IRequestHandler<T>) handlers.get(name);
 	}
 
+	public final void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
 	public final Executor getExecutor() {
 		return executor;
+	}
+
+	final Executor getExecutorWisely() {
+		return executor == null ? defaultExecutor : executor;
 	}
 
 	public final RpcServerOptions getOptions() {

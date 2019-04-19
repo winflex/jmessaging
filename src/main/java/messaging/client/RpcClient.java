@@ -28,6 +28,7 @@ import messaging.util.concurrent.IFuture;
 import messaging.util.concurrent.NamedThreadFactory;
 
 /**
+ * RPC客户端
  * 
  * 
  * @author winflex
@@ -55,9 +56,10 @@ public class RpcClient {
 		Bootstrap b = new Bootstrap();
 		b.group(workerGroup);
 		b.channel(NioSocketChannel.class);
-		Endpoint endpoint = options.getEndpoint();
+		final Endpoint endpoint = options.getEndpoint();
 		b.remoteAddress(endpoint.getIp(), endpoint.getPort());
 		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeoutMillis());
+		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
 		b.handler(new ChannelInitializer<Channel>() {
 
 			@Override
@@ -67,7 +69,7 @@ public class RpcClient {
 					logger.info("Channel disconnected, channel = {}", ch);
 				});
 
-				ChannelPipeline pl = ch.pipeline();
+				final ChannelPipeline pl = ch.pipeline();
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
 				pl.addLast(new ResponseHandler());
@@ -75,9 +77,13 @@ public class RpcClient {
 		});
 		return b;
 	}
+	
+	
 
 	/**
 	 * 同步发送无响应的请求
+	 * 
+	 * @throws RpcException 当发送失败时
 	 */
 	public void sendSync(Object data, int timeoutMillis) throws RpcException {
 		IFuture<Void> future = sendAsync(data, timeoutMillis).awaitUninterruptibly();
@@ -92,6 +98,8 @@ public class RpcClient {
 	
 	/**
 	 * 异步发送无响应的请求
+	 * 
+	 * @return future, 当发送成功时, 该future成功完成, 否则, 该future失败完成, 无论如何, 该future都确保在timeoutMillis时间内完成
 	 */
 	public IFuture<Void> sendAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, true);
@@ -117,7 +125,10 @@ public class RpcClient {
 	}
 	
 	/**
-	 * 同步发送需要响应的请求, 若请求超时, 那么返回null
+	 * 同步发送需要响应的请求
+	 * 
+	 * @return 响应
+	 * @throws RpcException 当请求失败时抛出
 	 */ 
 	public <V> V requestSync(Object data, int timeoutMillis) throws RpcException {
 		IFuture<V> future = requestAsync(data, timeoutMillis);
@@ -134,7 +145,9 @@ public class RpcClient {
 	}
 
 	/**
-	 * 异步发送需要响应的请求, 返回的future将保证在timeoutMillis时间内完成(成功或失败)
+	 * 异步发送需要响应的请求
+	 * 
+	 * @return future, 当接受到响应时, 该future成功完成, 否则, 该future失败完成, 无论如何, 该future都确保在timeoutMillis时间内完成
 	 */
 	public <V> IFuture<V> requestAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, false);

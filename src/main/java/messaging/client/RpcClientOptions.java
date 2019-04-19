@@ -1,5 +1,6 @@
 package messaging.client;
 
+import messaging.common.TcpOptions;
 import messaging.util.Endpoint;
 import messaging.util.StringUtils;
 
@@ -9,38 +10,39 @@ import messaging.util.StringUtils;
  * @author winflex
  */
 public class RpcClientOptions {
-	
+
 	/**
 	 * 服务端地址
 	 */
-	private Endpoint endpoint; 
-	
+	private Endpoint endpoint;
+
 	/**
 	 * io线程个数
 	 */
 	private int ioThreads;
-	
+
 	/**
 	 * 创建连接超时时间
 	 */
 	private int connectTimeoutMillis = 3000;
-	
+
 	/**
 	 * 最大连接数
 	 */
 	private int maxConnections = 1;
-	
+
 	/**
 	 * 序列化扩展点名字, 默认使用hessian序列化
 	 */
 	private byte serializerCode = 0;
-	
+
 	/**
 	 * 动态代理扩展点名字, 默认使用jdk
 	 */
 	private String proxy = "jdk";
-
 	
+	private TcpOptions tcpOptions;
+
 	public RpcClientOptions(Endpoint endpoint) {
 		this.endpoint = endpoint;
 	}
@@ -97,5 +99,13 @@ public class RpcClientOptions {
 			throw new IllegalArgumentException("The proxy can't be null");
 		}
 		this.proxy = proxy;
+	}
+
+	public TcpOptions getTcpOptions() {
+		return tcpOptions;
+	}
+
+	public void setTcpOptions(TcpOptions tcpOptions) {
+		this.tcpOptions = tcpOptions;
 	}
 }

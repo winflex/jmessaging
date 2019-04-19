@@ -1,6 +1,6 @@
 package messaging.server;
 
-import java.util.concurrent.Executor;
+import messaging.common.TcpOptions;
 
 /**
  * RPC服务端配置
@@ -28,8 +28,8 @@ public class RpcServerOptions {
 	 * 心跳间隔
 	 */
 	private int heartbeatInterval = 10000;
-
-	private Executor executor;
+	
+	private TcpOptions tcpOptions;
 
 	public RpcServerOptions(int port) {
 		if (port <= 0) {
@@ -69,12 +69,12 @@ public class RpcServerOptions {
 	public void setHeartbeatInterval(int heartbeatInterval) {
 		this.heartbeatInterval = heartbeatInterval;
 	}
-	
-	public Executor getExecutor() {
-		return executor;
+
+	public TcpOptions getTcpOptions() {
+		return tcpOptions;
 	}
 
-	public void setExecutor(Executor executor) {
-		this.executor = executor;
+	public void setTcpOptions(TcpOptions tcpOptions) {
+		this.tcpOptions = tcpOptions;
 	}
 }
