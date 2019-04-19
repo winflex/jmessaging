@@ -1,7 +1,6 @@
 package messaging.client;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -80,7 +79,7 @@ public class RpcClient {
 	/**
 	 * 同步发送无响应的请求
 	 */
-	public <T extends Serializable> void sendSync(T data, int timeoutMillis) throws RpcException {
+	public void sendSync(Object data, int timeoutMillis) throws RpcException {
 		IFuture<Void> future = sendAsync(data, timeoutMillis).awaitUninterruptibly();
 		if (!future.isSuccess()) {
 			if (future.cause() instanceof RpcException) {
@@ -94,7 +93,7 @@ public class RpcClient {
 	/**
 	 * 异步发送无响应的请求
 	 */
-	public <T extends Serializable> IFuture<Void> sendAsync(T data, int timeoutMillis) {
+	public IFuture<Void> sendAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, true);
 		final ResponseFuture<Void> future = new ResponseFuture<>(request.getId(), timeoutMillis);
 		try {
@@ -120,8 +119,9 @@ public class RpcClient {
 	/**
 	 * 同步发送需要响应的请求, 若请求超时, 那么返回null
 	 */ 
-	public <T extends Serializable, V extends Serializable> V requestSync(T data, int timeoutMillis) throws RpcException {
-		IFuture<V> future = this.<T, V>requestAsync(data, timeoutMillis).awaitUninterruptibly();
+	public <V> V requestSync(Object data, int timeoutMillis) throws RpcException {
+		IFuture<V> future = requestAsync(data, timeoutMillis);
+		future.awaitUninterruptibly();
 		if (future.isSuccess()) {
 			return future.getNow();
 		} else {
@@ -136,7 +136,7 @@ public class RpcClient {
 	/**
 	 * 异步发送需要响应的请求, 返回的future将保证在timeoutMillis时间内完成(成功或失败)
 	 */
-	public <T extends Serializable, V extends Serializable> IFuture<V> requestAsync(T data, int timeoutMillis) {
+	public <V> IFuture<V> requestAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, false);
 		request.setSerializerCode(options.getSerializerCode());
 		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), timeoutMillis);
