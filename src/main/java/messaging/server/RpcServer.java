@@ -12,9 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -63,15 +65,17 @@ public class RpcServer {
 		if (executor == null) {
 			defaultExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2,
 					Runtime.getRuntime().availableProcessors() * 2, 1, TimeUnit.MINUTES,
-					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Exeecutor"));
+					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Executor"));
 		}
 
-		this.bossGroup = new NioEventLoopGroup(1);
-		this.workerGroup = new NioEventLoopGroup(options.getIoThreads());
+		this.bossGroup = new NioEventLoopGroup(1, new NamedThreadFactory("RpcServer-IoAcceptor"));
+		this.workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
 
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workerGroup);
 		b.channel(NioServerSocketChannel.class);
+		b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+		b.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
 		b.childHandler(new ChannelInitializer<NioSocketChannel>() {
 

@@ -3,12 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>light-messaging</groupId>
-	<artifactId>light-messaging</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<groupId>jessaging</groupId>
+	<artifactId>jessaging</artifactId>
+	<version>0.1</version>
 	<packaging>jar</packaging>
 
-	<name>light-messaging</name>
+	<name>jmessaging</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -48,24 +48,32 @@
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
 			<version>4.0.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.javakaffee</groupId>
+			<artifactId>kryo-serializers</artifactId>
+			<version>0.45</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>hessian-lite</artifactId>
 			<version>3.2.1-fixed-2</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-            <groupId>com.alipay.sofa</groupId>
-            <artifactId>bolt</artifactId>
-            <version>1.5.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.alipay.sofa</groupId>
-            <artifactId>hessian</artifactId>
-            <version>3.3.6</version>
-            <scope>test</scope>
-        </dependency>
+			<groupId>com.alipay.sofa</groupId>
+			<artifactId>bolt</artifactId>
+			<version>1.5.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.alipay.sofa</groupId>
+			<artifactId>hessian</artifactId>
+			<version>3.3.6</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

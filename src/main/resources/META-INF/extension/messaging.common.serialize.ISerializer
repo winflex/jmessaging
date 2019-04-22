@@ -1,1 +1,2 @@
 0=messaging.common.serialize.HessianSerializer
+1=messaging.common.serialize.KryoSerializer

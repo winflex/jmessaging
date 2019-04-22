@@ -1,11 +1,15 @@
 package messaging.example;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import com.alipay.remoting.NamedThreadFactory;
 
 import messaging.common.RpcException;
 import messaging.server.Context;
 import messaging.server.IRequestHandler;
 import messaging.server.RpcServer;
+import messaging.server.RpcServerOptions;
 
 /**
  * 
@@ -13,7 +17,9 @@ import messaging.server.RpcServer;
  */
 public class Server {
 	public static void main(String[] args) throws RpcException {
-		RpcServer server = new RpcServer(9999);
+		RpcServerOptions options = new RpcServerOptions(9999);
+		options.setIoThreads(1);
+		RpcServer server = new RpcServer(options);
 		server.registerHandler(new IRequestHandler<AddRequest>() {
 
 			@Override
@@ -32,6 +38,7 @@ public class Server {
 				return null;
 			}
 		});
+		server.setExecutor(Executors.newSingleThreadExecutor(new NamedThreadFactory("ServiceExecutor", true)));
 		server.start().closeFuture().awaitUninterruptibly();
 	}
 }

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -23,6 +24,7 @@ import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
 import messaging.common.protocol.RpcRequest;
 import messaging.util.Endpoint;
+import messaging.util.ExceptionUtils;
 import messaging.util.NettyUtils;
 import messaging.util.concurrent.IFuture;
 import messaging.util.concurrent.NamedThreadFactory;
@@ -56,9 +58,9 @@ public class RpcClient {
 		Bootstrap b = new Bootstrap();
 		b.group(workerGroup);
 		b.channel(NioSocketChannel.class);
-		final Endpoint endpoint = options.getEndpoint();
-		b.remoteAddress(endpoint.getIp(), endpoint.getPort());
+		b.remoteAddress(options.getEndpoint().toSocketAddress());
 		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeoutMillis());
+		b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
 		b.handler(new ChannelInitializer<Channel>() {
 
@@ -88,11 +90,7 @@ public class RpcClient {
 	public void sendSync(Object data, int timeoutMillis) throws RpcException {
 		IFuture<Void> future = sendAsync(data, timeoutMillis).awaitUninterruptibly();
 		if (!future.isSuccess()) {
-			if (future.cause() instanceof RpcException) {
-				throw (RpcException) future.cause();
-			} else {
-				throw new RpcException(future.cause());
-			}
+			throw ExceptionUtils.as(future.cause(), RpcException.class, () -> new RpcException(future.cause()));
 		}
 	}
 	
@@ -136,11 +134,7 @@ public class RpcClient {
 		if (future.isSuccess()) {
 			return future.getNow();
 		} else {
-			if (future.cause() instanceof RpcException) {
-				throw (RpcException) future.cause();
-			} else {
-				throw new RpcException(future.cause());
-			}
+			throw ExceptionUtils.as(future.cause(), RpcException.class, () -> new RpcException(future.cause()));
 		}
 	}
 

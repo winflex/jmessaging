@@ -42,7 +42,7 @@ public class ChannelGroup {
 	private final HealthChecker healthChecker;
 
 	private final AtomicReferenceArray<Channel> channels;
-	private final AtomicInteger index = new AtomicInteger();
+	private final AtomicInteger selectIndex = new AtomicInteger();
 	
 	private final ReconnectTask reconnectTask;
 
@@ -79,7 +79,7 @@ public class ChannelGroup {
 		final int total = channels.length();
 		final long start = currentTime();
 		for (int i = 0; elapsedMillis(start) < timeoutMillis; i++) {
-			Channel ch = channels.get(this.index.getAndIncrement() % total);
+			Channel ch = channels.get(this.selectIndex.getAndIncrement() % total);
 			if (healthChecker.isHealthy(ch)) { // check on checkout
 				return ch;
 			}

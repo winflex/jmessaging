@@ -2,6 +2,7 @@ package messaging.util;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * 
@@ -69,5 +70,9 @@ public class Endpoint implements Serializable {
 			return false;
 		}
 		return this.port == other.port;
+	}
+	
+	public SocketAddress toSocketAddress() {
+		return new InetSocketAddress(ip, port);
 	}
 }
