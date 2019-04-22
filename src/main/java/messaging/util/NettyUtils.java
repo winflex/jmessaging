@@ -11,22 +11,23 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import messaging.common.TcpOptions;
 
+/**
+ * 
+ * 
+ * @author winflex
+ */
 public class NettyUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(NettyUtils.class);
 
-	public static final ChannelFutureListener LOGGING_LISTENER = new ChannelFutureListener() {
-
-		@Override
-		public void operationComplete(ChannelFuture future) throws Exception {
-			if (!future.isSuccess()) {
-				logger.error("Write message failed", future.cause());
-			}
+	public static final ChannelFutureListener LOGGING_LISTENER = (future) -> {
+		if (!future.isSuccess()) {
+			logger.error("Write message failed", future.cause());
 		}
 	};
 
 	public static ChannelFuture writeAndFlush(Channel ch, Object msg) {
-		// TODO check for ch.isWritable();
+		// TODO handle write failure more gracefully
 		return ch.writeAndFlush(msg).addListener(LOGGING_LISTENER);
 	}
 
@@ -59,7 +60,7 @@ public class NettyUtils {
 			b.option(ChannelOption.SO_TIMEOUT, tcp.getTimeout());
 		}
 	}
-	
+
 	public static void fillTcpOptions(ServerBootstrap b, TcpOptions tcp) {
 		if (tcp == null) {
 			return;

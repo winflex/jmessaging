@@ -9,13 +9,13 @@ import java.util.BitSet;
  */
 public final class TcpOptions {
 	private static final int BIT_KEEP_ALIVE = 0;
-	private static final int BIT_SEND_BUFFER = 0;
-	private static final int BIT_RECIEVE_BUFFER = 0;
-	private static final int BIT_REUSE_ADDRESS = 0;
-	private static final int BIT_LINGER = 0;
-	private static final int BIT_BACKLOG = 0;
-	private static final int BIT_TIMEOUT = 0;
-	private static final int BIT_NO_DELEY = 0;
+	private static final int BIT_SEND_BUFFER = 1;
+	private static final int BIT_RECIEVE_BUFFER = 2;
+	private static final int BIT_REUSE_ADDRESS = 3;
+	private static final int BIT_LINGER = 4;
+	private static final int BIT_BACKLOG = 5;
+	private static final int BIT_TIMEOUT = 6;
+	private static final int BIT_NO_DELEY = 7;
 
 	private boolean keepAlive;
 	private int sendBuffer;

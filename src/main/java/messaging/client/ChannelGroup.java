@@ -23,6 +23,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import messaging.util.ExceptionUtils;
 import messaging.util.concurrent.NamedThreadFactory;
 
 /**
@@ -66,12 +67,7 @@ public class ChannelGroup {
 		if (future.isSuccess()) {
 			return future.channel();
 		} else {
-			Throwable cause = future.cause();
-			if (cause instanceof IOException) {
-				throw (IOException) cause;
-			} else {
-				throw new IOException(cause);
-			}
+			throw ExceptionUtils.as(future.cause(), IOException.class, () -> new IOException(future.cause()));
 		}
 	}
 
@@ -110,13 +106,7 @@ public class ChannelGroup {
 
 	public static interface HealthChecker {
 
-		public static final HealthChecker ACTIVE = new HealthChecker() {
-
-			@Override
-			public boolean isHealthy(Channel channel) {
-				return channel.isActive();
-			}
-		};
+		public static final HealthChecker ACTIVE = (channel) -> channel.isActive(); 
 
 		boolean isHealthy(Channel channel);
 	}

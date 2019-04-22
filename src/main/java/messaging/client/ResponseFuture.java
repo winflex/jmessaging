@@ -58,12 +58,11 @@ public class ResponseFuture<T> extends DefaultPromise<T> {
 		if (timeoutMillis <= 0) {
 			throw new IllegalArgumentException("timeoutMillis must be positive");
 		}
-		
+
 		this.futureId = futureId;
 		inflightFutures.put(futureId, this);
-		this.timeoutFuture = scheduler.schedule(() -> {
-			setFailure(new TimeoutException("timed out after " + timeoutMillis + "ms"));
-		}, timeoutMillis, TimeUnit.MILLISECONDS);
+		Runnable task = () -> setFailure(new TimeoutException("timed out after " + timeoutMillis + "ms"));
+		this.timeoutFuture = scheduler.schedule(task, timeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	private void cancelTimeoutTask() {

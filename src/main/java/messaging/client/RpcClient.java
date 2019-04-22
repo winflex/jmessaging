@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -31,7 +29,6 @@ import messaging.util.concurrent.NamedThreadFactory;
 
 /**
  * RPC客户端
- * 
  * 
  * @author winflex
  */
@@ -79,8 +76,6 @@ public class RpcClient {
 		});
 		return b;
 	}
-	
-	
 
 	/**
 	 * 同步发送无响应的请求
@@ -93,11 +88,12 @@ public class RpcClient {
 			throw ExceptionUtils.as(future.cause(), RpcException.class, () -> new RpcException(future.cause()));
 		}
 	}
-	
+
 	/**
 	 * 异步发送无响应的请求
 	 * 
-	 * @return future, 当发送成功时, 该future成功完成, 否则, 该future失败完成, 无论如何, 该future都确保在timeoutMillis时间内完成
+	 * @return future, 当发送成功时, 该future成功完成, 否则, 该future失败完成, 无论如何,
+	 *         该future都确保在timeoutMillis时间内完成
 	 */
 	public IFuture<Void> sendAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, true);
@@ -105,15 +101,11 @@ public class RpcClient {
 		try {
 			Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
 			request.setSerializerCode(options.getSerializerCode());
-			NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
-
-				@Override
-				public void operationComplete(ChannelFuture channelFuture) throws Exception {
-					if (channelFuture.isSuccess()) {
-						future.setSuccess(true);
-					} else {
-						future.setFailure(channelFuture.cause());
-					}
+			NettyUtils.writeAndFlush(ch, request).addListener((channelFuture) -> {
+				if (channelFuture.isSuccess()) {
+					future.setSuccess(true);
+				} else {
+					future.setFailure(channelFuture.cause());
 				}
 			});
 		} catch (TimeoutException e) {
@@ -121,13 +113,13 @@ public class RpcClient {
 		}
 		return future;
 	}
-	
+
 	/**
 	 * 同步发送需要响应的请求
 	 * 
 	 * @return 响应
 	 * @throws RpcException 当请求失败时抛出
-	 */ 
+	 */
 	public <V> V requestSync(Object data, int timeoutMillis) throws RpcException {
 		IFuture<V> future = requestAsync(data, timeoutMillis);
 		future.awaitUninterruptibly();
@@ -141,7 +133,8 @@ public class RpcClient {
 	/**
 	 * 异步发送需要响应的请求
 	 * 
-	 * @return future, 当接受到响应时, 该future成功完成, 否则, 该future失败完成, 无论如何, 该future都确保在timeoutMillis时间内完成
+	 * @return future, 当接受到响应时, 该future成功完成, 否则, 该future失败完成, 无论如何,
+	 *         该future都确保在timeoutMillis时间内完成
 	 */
 	public <V> IFuture<V> requestAsync(Object data, int timeoutMillis) {
 		final RpcRequest request = new RpcRequest(data, false);
@@ -153,18 +146,14 @@ public class RpcClient {
 		} catch (TimeoutException e) {
 			ResponseFuture.doneWithException(future.getFutureId(), e);
 		}
-		NettyUtils.writeAndFlush(ch, request).addListener(new ChannelFutureListener() {
-
-			@Override
-			public void operationComplete(ChannelFuture channelFuture) throws Exception {
-				if (!channelFuture.isSuccess()) {
-					ResponseFuture.doneWithException(future.getFutureId(), channelFuture.cause());
-				}
+		NettyUtils.writeAndFlush(ch, request).addListener((channelFuture) -> {
+			if (!channelFuture.isSuccess()) {
+				ResponseFuture.doneWithException(future.getFutureId(), channelFuture.cause());
 			}
 		});
 		return future;
 	}
-	
+
 	public void close() {
 		if (!closed.compareAndSet(false, true)) {
 			return;
