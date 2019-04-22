@@ -13,18 +13,18 @@ import messaging.util.Endpoint;
  */
 public class BenchMarkClient {
 	public static void main(String[] args) throws IOException {
-		RpcClientOptions options = new RpcClientOptions(new Endpoint("10.8.1.84", 9999));
+		RpcClientOptions options = new RpcClientOptions(new Endpoint("localhost", 9999));
 		options.setMaxConnections(3);
 		RpcClient client = new RpcClient(options);
 		AddRequest req = new AddRequest(1, 2);
-		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(64).transaction(() -> {
+		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(1).transaction(() -> {
 			try {
 				client.requestSync(req, 3000);
 			} catch (RpcException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}).build();
 		lr.run();
+		client.close();
 	}
 }
