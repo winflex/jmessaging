@@ -1,6 +1,7 @@
 package messaging.client;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,6 +17,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import messaging.client.ChannelGroup.HealthChecker;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
@@ -56,7 +58,7 @@ public class RpcClient {
 		b.group(workerGroup);
 		b.channel(NioSocketChannel.class);
 		b.remoteAddress(options.getEndpoint().toSocketAddress());
-		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeoutMillis());
+		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
 		b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
 		b.handler(new ChannelInitializer<Channel>() {
@@ -69,9 +71,11 @@ public class RpcClient {
 				});
 
 				final ChannelPipeline pl = ch.pipeline();
+				pl.addLast(new IdleStateHandler(0, 0, options.getHeartbeatInterval(), TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
 				pl.addLast(new ResponseHandler());
+				pl.addLast(new EventHandler());
 			}
 		});
 		return b;
@@ -99,7 +103,7 @@ public class RpcClient {
 		final RpcRequest request = new RpcRequest(data, true);
 		final ResponseFuture<Void> future = new ResponseFuture<>(request.getId(), timeoutMillis);
 		try {
-			Channel ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
+			Channel ch = channelGroup.getChannel(options.getConnectTimeout());
 			request.setSerializerCode(options.getSerializerCode());
 			NettyUtils.writeAndFlush(ch, request).addListener((channelFuture) -> {
 				if (channelFuture.isSuccess()) {
@@ -142,7 +146,7 @@ public class RpcClient {
 		final ResponseFuture<V> future = new ResponseFuture<>(request.getId(), timeoutMillis);
 		Channel ch = null;
 		try {
-			ch = channelGroup.getChannel(options.getConnectTimeoutMillis());
+			ch = channelGroup.getChannel(options.getConnectTimeout());
 		} catch (TimeoutException e) {
 			ResponseFuture.doneWithException(future.getFutureId(), e);
 		}

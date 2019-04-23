@@ -86,10 +86,11 @@ public class RpcServer {
 					logger.info("Channel disconnected, channel = {}", ch);
 				});
 				ChannelPipeline pl = ch.pipeline();
-				pl.addLast(new IdleStateHandler(options.getHeartbeatInterval() * 2, 0, 0, TimeUnit.MILLISECONDS));
+				pl.addLast(new IdleStateHandler(options.getIdleTimeout(), 0, 0, TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
 				pl.addLast(new RequestDispatcher(RpcServer.this));
+				pl.addLast(new EventHandler());
 			}
 		});
 
@@ -98,7 +99,7 @@ public class RpcServer {
 
 		if (f.isSuccess()) {
 			this.serverChannel = f.channel();
-			logger.info("Server listening on {}:{}", options.getBindIp(), options.getPort());
+			logger.info("Server is now listening on {}:{}", options.getBindIp(), options.getPort());
 		} else {
 			throw new RpcException(f.cause());
 		}
@@ -120,7 +121,7 @@ public class RpcServer {
 			workerGroup.shutdownGracefully();
 		}
 
-		if (defaultExecutor != null) { // shutdown executor only if it was created by server
+		if (defaultExecutor != null) { // shutdown executor only if it was created inside server
 			((ThreadPoolExecutor) defaultExecutor).shutdownNow();
 		}
 

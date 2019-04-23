@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import messaging.common.RpcResult;
+import messaging.common.protocol.HeartbeatMessage;
 import messaging.common.protocol.RpcMessage;
 import messaging.common.protocol.RpcRequest;
 import messaging.common.protocol.RpcResponse;
@@ -75,6 +76,8 @@ public class Decoder extends ByteToMessageDecoder {
 			out.add(new RpcRequest(id, data, oneWay));
 		} else if (type == RpcMessage.TYPE_RESPONSE) {
 			out.add(new RpcResponse(id, (RpcResult) data));
+		} else if (type == RpcMessage.TYPE_HEARTBEAT) {
+			out.add(new HeartbeatMessage());
 		} else {
 			logger.error("Recieved an unknown packet with type {}, the channel({}) will be closed", type, ctx.channel());
 		}

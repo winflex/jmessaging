@@ -11,6 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import messaging.common.RpcException;
 import messaging.common.RpcResult;
+import messaging.common.protocol.HeartbeatMessage;
 import messaging.common.protocol.RpcMessage;
 import messaging.common.protocol.RpcRequest;
 import messaging.util.NettyUtils;
@@ -19,7 +20,7 @@ import messaging.util.NettyUtils;
  * 
  * @author winflex
  */
-public class RequestDispatcher extends SimpleChannelInboundHandler<RpcRequest> {
+public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 
 	private static final Logger logger = LoggerFactory.getLogger(RequestDispatcher.class);
 	
@@ -30,7 +31,20 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcRequest> {
 	}
 
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, RpcRequest msg) throws Exception {
+	protected void channelRead0(ChannelHandlerContext ctx, RpcMessage msg) throws Exception {
+		if (msg instanceof RpcRequest) {
+			handleRequest(ctx, (RpcRequest) msg);
+		} else if (msg instanceof HeartbeatMessage) {
+			handleHeartbeat(ctx, (HeartbeatMessage) msg);
+		}
+	}
+
+	private void handleHeartbeat(ChannelHandlerContext ctx, HeartbeatMessage msg) {
+		logger.debug("Revieved heartbeat on channel({})", ctx.channel());
+	}
+
+	private void handleRequest(ChannelHandlerContext ctx, RpcRequest msg) {
+		logger.debug("Recieved request({}) on channel({})", msg, ctx.channel());
 		Object request = msg.getData();
 		IRequestHandler<Object> handler = rpcServer.getHandler(request.getClass().getName());
 		if (handler == null) {

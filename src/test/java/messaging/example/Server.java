@@ -19,6 +19,7 @@ public class Server {
 	public static void main(String[] args) throws RpcException {
 		RpcServerOptions options = new RpcServerOptions(9999);
 		options.setIoThreads(1);
+		options.setIdleTimeout(10000);
 		RpcServer server = new RpcServer(options);
 		server.registerHandler(new IRequestHandler<AddRequest>() {
 

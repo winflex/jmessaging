@@ -30,6 +30,8 @@ public class RpcClientOptions {
 	 * 最大连接数
 	 */
 	private int maxConnections = 1;
+	
+	private int heartbeatIntervalMillis = 30000;
 
 	/**
 	 * 序列化扩展点名字, 默认使用hessian序列化
@@ -71,15 +73,23 @@ public class RpcClientOptions {
 		this.ioThreads = ioThreads;
 	}
 
-	public int getConnectTimeoutMillis() {
+	public int getConnectTimeout() {
 		return connectTimeoutMillis;
 	}
 
-	public void setConnectTimeoutMillis(int connectTimeoutMillis) {
+	public void setConnectTimeout(int connectTimeoutMillis) {
 		if (connectTimeoutMillis <= 0) {
 			throw new IllegalArgumentException("The connectTimeoutMillis must be positive");
 		}
 		this.connectTimeoutMillis = connectTimeoutMillis;
+	}
+
+	public int getHeartbeatInterval() {
+		return heartbeatIntervalMillis;
+	}
+
+	public void setHeartbeatInterval(int heartbeatIntervalMillis) {
+		this.heartbeatIntervalMillis = heartbeatIntervalMillis;
 	}
 
 	public byte getSerializerCode() {

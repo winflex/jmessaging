@@ -25,9 +25,9 @@ public class RpcServerOptions {
 	private int ioThreads = 0;
 
 	/**
-	 * 心跳间隔
+	 * 空闲多久后关闭连接, <= 0时不启用
 	 */
-	private int heartbeatInterval = 10000;
+	private int idleTimeoutMillis = 90 * 1000;
 	
 	private TcpOptions tcpOptions;
 
@@ -62,12 +62,12 @@ public class RpcServerOptions {
 		this.ioThreads = ioThreads;
 	}
 
-	public int getHeartbeatInterval() {
-		return heartbeatInterval;
+	public int getIdleTimeout() {
+		return idleTimeoutMillis;
 	}
 
-	public void setHeartbeatInterval(int heartbeatInterval) {
-		this.heartbeatInterval = heartbeatInterval;
+	public void setIdleTimeout(int idleTimeoutMillis) {
+		this.idleTimeoutMillis = idleTimeoutMillis;
 	}
 
 	public TcpOptions getTcpOptions() {
