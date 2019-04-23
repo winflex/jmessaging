@@ -1,67 +1,9 @@
 # jmessaging
-一个轻量级、易用的异步通讯框架
+An easy-to-use RPC framework
 
 # Example
-## Custom message
-### AddRequest
-```
-public class AddRequest implements Serializable {
-  private static final long serialVersionUID = 3848094754327316874L;
-  private int op1;
-  private int op2;
 
-  public AddRequest() {
-  }
-
-  public AddRequest(int op1, int op2) {
-    super();
-    this.op1 = op1;
-    this.op2 = op2;
-  }
-
-  public int getOp1() {
-    return op1;
-  }
-
-  public void setOp1(int op1) {
-    this.op1 = op1;
-  }
-
-  public int getOp2() {
-    return op2;
-  }
-
-  public void setOp2(int op2) {
-    this.op2 = op2;
-  }
-}
-
-```
-### AddResponse
-```
-public class AddResponse implements Serializable {
-  private static final long serialVersionUID = -4644759432114731809L;
-  private int value;
-
-  public AddResponse() {
-  }
-
-  public AddResponse(int value) {
-    super();
-    this.value = value;
-  }
-
-  public int getValue() {
-    return value;
-  }
-
-  public void setValue(int value) {
-    this.value = value;
-  }
-}
-```
-
-## Server
+# Server
 ```
 public class Server {
   public static void main(String[] args) throws RpcException {
@@ -89,14 +31,49 @@ public class Server {
 }
 ```
 
-## Client
+# Client
 ```
 public class Client {
   public static void main(String[] args) throws RpcException {
     RpcClientOptions options = new RpcClientOptions(new Endpoint("localhost", 9999));
     RpcClient client = new RpcClient(options);
-    IFuture<AddResponse> future = client.request(new AddRequest(1, 2));
-    AddResponse resp = future.awaitUninterruptibly().getNow();
+    
+    // synchronous request
+    try {
+      AddResponse response = client.requestSync(new AddRequest(1, 2), 3000);
+      // xxx
+    } catch (RpcException e) {
+      // xxx 
+    }
+    
+    // asynchronous request
+    IFuture<AddResponse> future = client.requestAsync(new AddRequest(1, 2), 3000);
+    future.addListener((future) -> {
+      if (future.isSuccess()) {
+        // xxx
+      } else {
+        // xxx
+      }
+    });
+    
+    // synchronous one way request
+    Object oneWayRequest = ...;
+    try {
+      client.sendSync(oneWayRequest, 3000);
+      // xxx
+    } catch (RpcException e) {
+      // xxx 
+    }
+    
+    // asynchronous one way request
+    IFuture<Void> future = client.sendAsync(oneWayRequest, 3000);
+    future.addListener((future) -> {
+      if (future.isSuccess()) {
+        // xxx
+      } else {
+        // xxx
+      }
+    }
   }
 }
 ```
