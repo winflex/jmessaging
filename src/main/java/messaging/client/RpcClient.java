@@ -17,6 +17,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import messaging.client.ChannelGroup.HealthChecker;
 import messaging.common.RpcException;
@@ -71,6 +72,9 @@ public class RpcClient {
 				});
 
 				final ChannelPipeline pl = ch.pipeline();
+				// https://github.com/relayrides/pushy/pull/657
+				// https://github.com/netty/netty/issues/1759
+				pl.addLast(new FlushConsolidationHandler(256, true));
 				pl.addLast(new IdleStateHandler(0, 0, options.getHeartbeatInterval(), TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());

@@ -17,7 +17,7 @@ public class BenchMarkClient {
 		options.setMaxConnections(3);
 		RpcClient client = new RpcClient(options);
 		AddRequest req = new AddRequest(1, 2);
-		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(1).transaction(() -> {
+		LoadRunner lr = LoadRunner.builder().millis(300000).reportInterval(1000).threads(64).transaction(() -> {
 			try {
 				client.requestSync(req, 3000);
 			} catch (RpcException e) {

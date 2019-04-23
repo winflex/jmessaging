@@ -22,6 +22,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
@@ -86,6 +87,10 @@ public class RpcServer {
 					logger.info("Channel disconnected, channel = {}", ch);
 				});
 				ChannelPipeline pl = ch.pipeline();
+				
+				// https://github.com/relayrides/pushy/pull/657
+				// https://github.com/netty/netty/issues/1759
+				pl.addLast(new FlushConsolidationHandler(256, true));
 				pl.addLast(new IdleStateHandler(options.getIdleTimeout(), 0, 0, TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
