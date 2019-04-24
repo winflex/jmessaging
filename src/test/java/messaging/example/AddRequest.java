@@ -35,4 +35,30 @@ public class AddRequest implements Serializable {
 	public void setOp2(int op2) {
 		this.op2 = op2;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + op1;
+		result = prime * result + op2;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AddRequest other = (AddRequest) obj;
+		if (op1 != other.op1)
+			return false;
+		if (op2 != other.op2)
+			return false;
+		return true;
+	}
+	
 }

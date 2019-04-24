@@ -1,7 +1,9 @@
 package messaging.example;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import com.alipay.remoting.NamedThreadFactory;
 
@@ -39,7 +41,8 @@ public class Server {
 				return null;
 			}
 		});
-		server.setExecutor(Executors.newSingleThreadExecutor(new NamedThreadFactory("ServiceExecutor", true)));
+		Executor e = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("ServiceExecutor", true));
+		server.setExecutor(e);
 		server.start().closeFuture().awaitUninterruptibly();
 	}
 }
