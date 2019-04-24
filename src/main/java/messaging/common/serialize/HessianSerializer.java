@@ -1,8 +1,8 @@
 package messaging.common.serialize;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import com.alibaba.com.caucho.hessian.io.Hessian2Input;
 import com.alibaba.com.caucho.hessian.io.Hessian2Output;
@@ -14,28 +14,26 @@ import com.alibaba.com.caucho.hessian.io.SerializerFactory;
  */
 public class HessianSerializer implements ISerializer {
 
-	@Override
-	public byte[] serialize(Object obj) throws IOException {
-		 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Hessian2Output ho = new Hessian2Output(baos);
-        ho.setSerializerFactory(SERIALIZER_FACTORY);
-        ho.writeObject(obj);
-        ho.flush();
-        return baos.toByteArray();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T deserialize(byte[] stream) throws IOException, ClassNotFoundException {
-		 Hessian2Input hi = new Hessian2Input(new ByteArrayInputStream(stream));
-        hi.setSerializerFactory(SERIALIZER_FACTORY);
-        return (T) hi.readObject();
-	}
-	
 	private final SerializerFactory SERIALIZER_FACTORY = new SerializerFactory() {
 		@Override
 	    public ClassLoader getClassLoader() {
 	        return Thread.currentThread().getContextClassLoader();
 	    }
 	};
+
+	@Override
+	public void serialize(Object obj, OutputStream out) throws IOException {
+        Hessian2Output ho = new Hessian2Output(out);
+        ho.setSerializerFactory(SERIALIZER_FACTORY);
+        ho.writeObject(obj);
+        ho.flush();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T deserialize(InputStream in) throws IOException {
+		Hessian2Input hi = new Hessian2Input(in);
+        hi.setSerializerFactory(SERIALIZER_FACTORY);
+        return (T) hi.readObject();
+	}
 }

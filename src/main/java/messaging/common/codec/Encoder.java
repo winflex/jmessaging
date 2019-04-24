@@ -1,15 +1,15 @@
 package messaging.common.codec;
 
-import java.util.HashMap;
-import java.util.Map;
+import static messaging.common.codec.SerializerHolder.getSerializer;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import messaging.common.protocol.RpcMessage;
 import messaging.common.protocol.RpcRequest;
-import messaging.common.serialize.ISerializer;
-import messaging.util.ExtensionLoader;
 
 /**
  * <pre>
@@ -28,7 +28,7 @@ import messaging.util.ExtensionLoader;
  */
 public class Encoder extends MessageToByteEncoder<RpcMessage> {
 
-	private final Map<Integer, ISerializer> serializers = new HashMap<>();
+	private final ByteBufOutputStream output = new ByteBufOutputStream();
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, RpcMessage msg, ByteBuf out) throws Exception {
@@ -37,17 +37,18 @@ public class Encoder extends MessageToByteEncoder<RpcMessage> {
 		out.writeLong(msg.getId());
 		out.writeByte(getFlag(msg));
 		out.writeByte(msg.getSerializerCode());
-		
+
 		Object data = msg.getData();
 		if (data == null) {
 			out.writeInt(0);
 		} else {
-			byte[] bytes = getSerializer(msg.getSerializerCode()).serialize(data);
-			out.writeInt(bytes.length);
-			out.writeBytes(bytes);
+			out.writeInt(0); // skip body length for now
+			getSerializer(msg.getSerializerCode()).serialize(data, output.setBuf(out));
+			int dataLength = out.readableBytes() - CodecConstants.HEADER_LENGTH;
+			out.setInt(CodecConstants.BODY_LENGTH_OFFSET, dataLength); // write the real body length
 		}
 	}
-	
+
 	private byte getFlag(RpcMessage msg) {
 		byte flag = 0;
 		if (msg instanceof RpcRequest) {
@@ -58,12 +59,27 @@ public class Encoder extends MessageToByteEncoder<RpcMessage> {
 		return flag;
 	}
 
-	private ISerializer getSerializer(int code) throws Exception {
-		ISerializer serializer = serializers.get(Integer.valueOf(code));
-		if (serializer == null) {
-			serializer = ExtensionLoader.getLoader(ISerializer.class).getExtension(String.valueOf(code));
-			serializers.put(code, serializer);
+	final class ByteBufOutputStream extends OutputStream {
+		private ByteBuf buf;
+
+		ByteBufOutputStream setBuf(ByteBuf buf) {
+			this.buf = buf;
+			return this;
 		}
-		return serializer;
+
+		@Override
+		public void write(int b) throws IOException {
+			buf.writeByte(b);
+		}
+
+		@Override
+		public void write(byte[] b) throws IOException {
+			write(b, 0, b.length);
+		}
+
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			buf.writeBytes(b, off, len);
+		}
 	}
 }

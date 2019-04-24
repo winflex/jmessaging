@@ -3,10 +3,11 @@ package messaging.common.codec;
 import static messaging.common.codec.CodecConstants.BODY_LENGTH_OFFSET;
 import static messaging.common.codec.CodecConstants.HEADER_LENGTH;
 import static messaging.common.codec.CodecConstants.MAGIC;
+import static messaging.common.codec.SerializerHolder.getSerializer;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,6 @@ import messaging.common.protocol.HeartbeatMessage;
 import messaging.common.protocol.RpcMessage;
 import messaging.common.protocol.RpcRequest;
 import messaging.common.protocol.RpcResponse;
-import messaging.common.serialize.ISerializer;
-import messaging.util.ExtensionLoader;
 
 /**
  * <pre>
@@ -34,6 +33,7 @@ import messaging.util.ExtensionLoader;
  * | magic(2 bytes) | type(1 byte) | id(8 bytes) |          reserved(1 byte)        | serialize code(1 byte) | body length(4 bytes) | body |
  * +----------------+--------------+-------------+----------------------------------+------------------------+----------------------+------+
  * </pre>
+ * 
  * @author winflex
  * 
  */
@@ -41,8 +41,6 @@ public class Decoder extends ByteToMessageDecoder {
 
 	private static final Logger logger = LoggerFactory.getLogger(Decoder.class);
 
-	private final Map<Integer, ISerializer> serializers = new HashMap<>();
-	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		int readableBytes = in.readableBytes();
@@ -61,16 +59,12 @@ public class Decoder extends ByteToMessageDecoder {
 		byte flag = in.readByte();
 		int serializerCode = in.readByte();
 		int dataLength = in.readInt();
-		byte[] dataBytes = null;
+
+		Object data = null;
 		if (dataLength > 0) {
-			in.readBytes(dataBytes = new byte[dataLength]);
+			data = getSerializer(serializerCode).deserialize(new ByteBufInputStream(in, dataLength));
 		}
 
-		Object data = dataBytes;
-		if (dataBytes != null && dataBytes.length > 0) {
-			data = getSerializer(serializerCode).deserialize(dataBytes);
-		}
-		
 		if (type == RpcMessage.TYPE_REQUEST) {
 			boolean oneWay = (flag & CodecConstants.ONE_WAY_MASK) == 1;
 			out.add(new RpcRequest(id, data, oneWay));
@@ -79,16 +73,54 @@ public class Decoder extends ByteToMessageDecoder {
 		} else if (type == RpcMessage.TYPE_HEARTBEAT) {
 			out.add(new HeartbeatMessage());
 		} else {
-			logger.error("Recieved an unknown packet with type {}, the channel({}) will be closed", type, ctx.channel());
+			logger.error("Recieved an unknown packet with type {}, the channel({}) will be closed", type,
+					ctx.channel());
 		}
 	}
-	
-	private ISerializer getSerializer(int code) throws Exception {
-		ISerializer serializer = serializers.get(Integer.valueOf(code));
-		if (serializer == null) {
-			serializer = ExtensionLoader.getLoader(ISerializer.class).getExtension(String.valueOf(code));
-			serializers.put(code, serializer);
+
+	final class ByteBufInputStream extends InputStream {
+		private final ByteBuf buf;
+		private final int size;
+		private int read;
+
+		ByteBufInputStream(ByteBuf buf, int size) {
+			this.buf = buf;
+			this.size = size;
 		}
-		return serializer;
+
+		@Override
+		public int read() throws IOException {
+			// 不能以in.readableBytes()来判断是否是eof, 以正确处理一个ByteBuf里有多个包的情况
+			if (read >= size) {
+				return -1;
+			}
+			read++;
+			return buf.readByte();
+		}
+
+		@Override
+		public int read(byte[] b) throws IOException {
+			return read(b, 0, b.length);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			if (read >= size) {
+				return -1;
+			}
+			int available = size - read;
+			if (len > available) {
+				buf.readBytes(b, 0, available);
+				return available;
+			} else {
+				buf.readBytes(b, 0, len);
+				return len;
+			}
+		}
+
+		@Override
+		public int available() throws IOException {
+			return size - read;
+		}
 	}
 }

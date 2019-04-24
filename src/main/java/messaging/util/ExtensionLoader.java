@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -57,6 +59,18 @@ public final class ExtensionLoader {
 			throw new Exception("No such extension " + name + " of type " + type.getName());
 		}
 		return (T) Class.forName(className).newInstance();
+	}
+	
+	public Set<String> listExtensions() throws Exception {
+		Map<String, String> classCache = extensionClassCache;
+		if (classCache == null) {
+			synchronized (this) {
+				if ((classCache = extensionClassCache) == null) {
+					classCache = extensionClassCache = findExtensionClasses();
+				}
+			}
+		}
+		return classCache.keySet();
 	}
 
 	private Map<String, String> findExtensionClasses() throws Exception {
