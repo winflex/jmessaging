@@ -3,8 +3,6 @@ package messaging.server;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,9 +43,7 @@ public class RpcServer {
 
 	private final RpcServerOptions options;
 
-	// 两个executor只有一个有用
-	private ThreadPoolExecutor defaultExecutor; // 内部创建的executor
-	private Executor executor; // 外部创建的executor
+	private Executor executor;
 
 	private EventLoopGroup bossGroup;
 	private EventLoopGroup workerGroup;
@@ -67,11 +63,6 @@ public class RpcServer {
 	}
 
 	public RpcServer start() throws RpcException {
-		if (executor == null) {
-			defaultExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2,
-					Runtime.getRuntime().availableProcessors() * 2, 1, TimeUnit.MINUTES,
-					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Executor"));
-		}
 		ServerBootstrap boostrap = createBootstrap();
 		ChannelFuture f = null;
 		f = boostrap.bind(options.getBindIp(), options.getPort()).syncUninterruptibly();
@@ -140,11 +131,6 @@ public class RpcServer {
 		if (workerGroup != null) {
 			workerGroup.shutdownGracefully();
 		}
-
-		if (defaultExecutor != null) { // shutdown executor only if it was created inside server
-			((ThreadPoolExecutor) defaultExecutor).shutdownNow();
-		}
-
 		logger.info("Server shutdown");
 		closeFuture.setSuccess(null);
 	}
@@ -168,11 +154,7 @@ public class RpcServer {
 
 	public final Executor getExecutor() {
 		return executor;
-	}
-
-	final Executor getExecutorWisely() {
-		return executor == null ? defaultExecutor : executor;
-	}
+	}	
 
 	public final RpcServerOptions getOptions() {
 		return options;

@@ -15,6 +15,7 @@ import messaging.common.protocol.HeartbeatMessage;
 import messaging.common.protocol.RpcMessage;
 import messaging.common.protocol.RpcRequest;
 import messaging.util.NettyUtils;
+import messaging.util.concurrent.SynchronousExecutor;
 
 /**
  * 
@@ -53,7 +54,7 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 				respondWithException(ctx.channel(), msg.getId(), error);
 			}
 		} else {
-			Executor executor = rpcServer.getExecutorWisely();
+			Executor executor = getExecutor(handler);
 			executor.execute(() -> {
 				try {
 					Context context = new Context(msg, ctx.channel(), executor);
@@ -66,6 +67,20 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 				}
 			});
 		}
+	}
+
+	/**
+	 * 优先级： {@link IRequestHandler#getExecutor()} > {@link RpcServer#getExecutor()} > {@link SynchronousExecutor#INSTANCE}
+	 */
+	private Executor getExecutor(IRequestHandler<Object> handler) {
+		Executor executor = handler.getExecutor();
+		if (executor == null) {
+			executor = rpcServer.getExecutor();
+		}
+		if (executor == null) {
+			executor = SynchronousExecutor.INSTANCE;
+		}
+		return executor;
 	}
 
 	private void respondWithException(Channel ch, long requestId, Throwable cause) {
