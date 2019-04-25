@@ -19,9 +19,13 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import messaging.common.RpcException;
@@ -68,20 +72,41 @@ public class RpcServer {
 					Runtime.getRuntime().availableProcessors() * 2, 1, TimeUnit.MINUTES,
 					new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Rpc-Service-Executor"));
 		}
+		ServerBootstrap boostrap = createBootstrap();
+		ChannelFuture f = null;
+		f = boostrap.bind(options.getBindIp(), options.getPort()).syncUninterruptibly();
 
-		this.bossGroup = new NioEventLoopGroup(1, new NamedThreadFactory("RpcServer-IoAcceptor"));
-		this.workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
+		if (f.isSuccess()) {
+			this.serverChannel = f.channel();
+			logger.info("Server is now listening on {}:{}", options.getBindIp(), options.getPort());
+		} else {
+			throw new RpcException(f.cause());
+		}
+		return this;
+	}
 
-		ServerBootstrap b = new ServerBootstrap();
-		b.group(bossGroup, workerGroup);
-		b.channel(NioServerSocketChannel.class);
-		b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-		b.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
-		b.childHandler(new ChannelInitializer<NioSocketChannel>() {
+	private ServerBootstrap createBootstrap() {
+		ServerBootstrap boostrap = new ServerBootstrap();
+		if (Epoll.isAvailable()) {
+			this.bossGroup = new EpollEventLoopGroup(1, new NamedThreadFactory("RpcServer-IoAcceptor"));
+			this.workerGroup = new EpollEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
+			boostrap.channel(EpollServerSocketChannel.class);
+			boostrap.option(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+			NettyUtils.fillTcpOptions(boostrap, options.getTcpOptions(), true);
+			boostrap.childOption(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+		} else {
+			this.bossGroup = new NioEventLoopGroup(1, new NamedThreadFactory("RpcServer-IoAcceptor"));
+			this.workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
+			boostrap.channel(NioServerSocketChannel.class);
+			boostrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+			NettyUtils.fillTcpOptions(boostrap, options.getTcpOptions(), false);
+			boostrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+		}
+		boostrap.group(bossGroup, workerGroup);
+		boostrap.childHandler(new ChannelInitializer<SocketChannel>() {
 
 			@Override
-			protected void initChannel(NioSocketChannel ch) throws Exception {
+			protected void initChannel(SocketChannel ch) throws Exception {
 				logger.info("Channel connected, channel = {}", ch);
 				ch.closeFuture().addListener((future) -> {
 					logger.info("Channel disconnected, channel = {}", ch);
@@ -98,17 +123,7 @@ public class RpcServer {
 				pl.addLast(new EventHandler());
 			}
 		});
-
-		ChannelFuture f = null;
-		f = b.bind(options.getBindIp(), options.getPort()).syncUninterruptibly();
-
-		if (f.isSuccess()) {
-			this.serverChannel = f.channel();
-			logger.info("Server is now listening on {}:{}", options.getBindIp(), options.getPort());
-		} else {
-			throw new RpcException(f.cause());
-		}
-		return this;
+		return boostrap;
 	}
 
 	public void close() {

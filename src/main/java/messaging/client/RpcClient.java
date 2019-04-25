@@ -15,7 +15,12 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -39,7 +44,7 @@ public class RpcClient {
 	private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
 
 	private final RpcClientOptions options; // 配置
-	private final EventLoopGroup workerGroup;
+	private EventLoopGroup workerGroup;
 	private final ChannelGroup channelGroup;
 
 	private final AtomicBoolean closed = new AtomicBoolean();
@@ -50,27 +55,36 @@ public class RpcClient {
 
 	public RpcClient(RpcClientOptions options) throws IOException {
 		this.options = options;
-		this.workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("Rpc-Client-IoWorker"));
+		
 		this.channelGroup = new ChannelGroup(createBootstrap(), options.getMaxConnections(), HealthChecker.ACTIVE);
 	}
 
 	private Bootstrap createBootstrap() {
 		Bootstrap b = new Bootstrap();
-		b.group(workerGroup);
-		b.channel(NioSocketChannel.class);
 		b.remoteAddress(options.getEndpoint().toSocketAddress());
-		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-		b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-		NettyUtils.fillTcpOptions(b, options.getTcpOptions());
-		b.handler(new ChannelInitializer<Channel>() {
-
+		if (Epoll.isAvailable()) {
+			workerGroup = new EpollEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("Rpc-Client-IoWorker"));
+			b.channel(EpollSocketChannel.class);
+			b.option(EpollChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+			b.option(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+			NettyUtils.fillTcpOptions(b, options.getTcpOptions(), true);
+		} else {
+			workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("Rpc-Client-IoWorker"));
+			b.channel(NioSocketChannel.class);
+			b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+			b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+			NettyUtils.fillTcpOptions(b, options.getTcpOptions(), false);
+		}
+		b.group(workerGroup);
+		b.handler(new ChannelInitializer<SocketChannel>() {
+			
 			@Override
-			protected void initChannel(Channel ch) throws Exception {
+			protected void initChannel(SocketChannel ch) throws Exception {
 				logger.info("Channel connected, channel = {}", ch);
 				ch.closeFuture().addListener((future) -> {
 					logger.info("Channel disconnected, channel = {}", ch);
 				});
-
+				
 				final ChannelPipeline pl = ch.pipeline();
 				// https://github.com/relayrides/pushy/pull/657
 				// https://github.com/netty/netty/issues/1759

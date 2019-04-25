@@ -2,7 +2,6 @@ package messaging.client;
 
 import messaging.common.TcpOptions;
 import messaging.util.Endpoint;
-import messaging.util.StringUtils;
 
 /**
  * RPC客户端配置
@@ -105,7 +104,7 @@ public class RpcClientOptions {
 	}
 
 	public void setProxy(String proxy) {
-		if (StringUtils.isEmpty(proxy)) {
+		if (proxy == null || proxy.isEmpty()) {
 			throw new IllegalArgumentException("The proxy can't be null");
 		}
 		this.proxy = proxy;
