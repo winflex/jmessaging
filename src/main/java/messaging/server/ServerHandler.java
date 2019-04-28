@@ -1,6 +1,7 @@
 package messaging.server;
 
 import static messaging.common.protocol.RpcMessage.TYPE_RESPONSE;
+
 import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.timeout.IdleStateEvent;
 import messaging.common.RpcException;
 import messaging.common.RpcResult;
 import messaging.common.protocol.HeartbeatMessage;
@@ -21,13 +23,12 @@ import messaging.util.concurrent.SynchronousExecutor;
  * 
  * @author winflex
  */
-public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
+public class ServerHandler extends SimpleChannelInboundHandler<RpcMessage> {
+	private static final Logger logger = LoggerFactory.getLogger(ServerHandler.class);
 
-	private static final Logger logger = LoggerFactory.getLogger(RequestDispatcher.class);
-	
 	private final RpcServer rpcServer;
 
-	public RequestDispatcher(RpcServer rpcServer) {
+	public ServerHandler(RpcServer rpcServer) {
 		this.rpcServer = rpcServer;
 	}
 
@@ -70,7 +71,8 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 	}
 
 	/**
-	 * 优先级： {@link IRequestHandler#getExecutor()} > {@link RpcServer#getExecutor()} > {@link SynchronousExecutor#INSTANCE}
+	 * 优先级： {@link IRequestHandler#getExecutor()} > {@link RpcServer#getExecutor()}
+	 * > {@link SynchronousExecutor#INSTANCE}
 	 */
 	private Executor getExecutor(IRequestHandler<Object> handler) {
 		Executor executor = handler.getExecutor();
@@ -89,5 +91,19 @@ public class RequestDispatcher extends SimpleChannelInboundHandler<RpcMessage> {
 		response.setId(requestId);
 		response.setData(RpcResult.newFailureResult(cause));
 		NettyUtils.writeAndFlush(ch, response);
+	}
+	
+	@Override
+	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+		if (evt instanceof IdleStateEvent) {
+			// idle timeout
+			logger.warn("Channel has passed idle timeout, channel = {}", ctx.channel());
+			ctx.close();
+		}
+	}
+	
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		logger.error(cause.getMessage(), cause);
 	}
 }

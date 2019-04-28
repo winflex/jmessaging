@@ -107,6 +107,8 @@ public class ChannelGroup {
 	public static interface HealthChecker {
 
 		public static final HealthChecker ACTIVE = (channel) -> channel.isActive(); 
+		public static final HealthChecker ALWAYS_HEALTHY = (channel) -> true;
+		public static final HealthChecker NEVER_HEALTHY = (channel) -> false;
 
 		boolean isHealthy(Channel channel);
 	}

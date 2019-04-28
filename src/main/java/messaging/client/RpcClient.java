@@ -92,8 +92,7 @@ public class RpcClient {
 				pl.addLast(new IdleStateHandler(0, 0, options.getHeartbeatInterval(), TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
-				pl.addLast(new ResponseHandler());
-				pl.addLast(new EventHandler());
+				pl.addLast(new ClientHandler());
 			}
 		});
 		return b;

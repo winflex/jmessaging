@@ -110,8 +110,7 @@ public class RpcServer {
 				pl.addLast(new IdleStateHandler(options.getIdleTimeout(), 0, 0, TimeUnit.MILLISECONDS));
 				pl.addLast(new Decoder());
 				pl.addLast(new Encoder());
-				pl.addLast(new RequestDispatcher(RpcServer.this));
-				pl.addLast(new EventHandler());
+				pl.addLast(new ServerHandler(RpcServer.this));
 			}
 		});
 		return boostrap;
