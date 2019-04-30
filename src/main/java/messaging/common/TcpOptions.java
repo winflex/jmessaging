@@ -7,7 +7,7 @@ import java.util.BitSet;
  * 
  * @author winflex
  */
-public final class TcpOptions {
+public class TcpOptions {
 	private static final int BIT_KEEP_ALIVE = 0;
 	private static final int BIT_SEND_BUFFER = 1;
 	private static final int BIT_RECIEVE_BUFFER = 2;

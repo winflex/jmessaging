@@ -67,13 +67,13 @@ public class RpcClient {
 			b.channel(EpollSocketChannel.class);
 			b.option(EpollChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
 			b.option(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-			NettyUtils.fillTcpOptions(b, options.getTcpOptions(), true);
+			NettyUtils.fillTcpOptions(b, options, true);
 		} else {
 			workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("Rpc-Client-IoWorker"));
 			b.channel(NioSocketChannel.class);
 			b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
 			b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-			NettyUtils.fillTcpOptions(b, options.getTcpOptions(), false);
+			NettyUtils.fillTcpOptions(b, options, false);
 		}
 		b.group(workerGroup);
 		b.handler(new ChannelInitializer<SocketChannel>() {

@@ -7,7 +7,7 @@ import messaging.common.TcpOptions;
  * 
  * @author winflex
  */
-public class RpcServerOptions {
+public class RpcServerOptions extends TcpOptions {
 
 	/**
 	 * RPC 服务端监听端口
@@ -29,8 +29,6 @@ public class RpcServerOptions {
 	 */
 	private int idleTimeoutMillis = 90 * 1000;
 	
-	private TcpOptions tcpOptions;
-
 	public RpcServerOptions(int port) {
 		if (port <= 0) {
 			throw new IllegalArgumentException("port must be positive");
@@ -68,13 +66,5 @@ public class RpcServerOptions {
 
 	public void setIdleTimeout(int idleTimeoutMillis) {
 		this.idleTimeoutMillis = idleTimeoutMillis;
-	}
-
-	public TcpOptions getTcpOptions() {
-		return tcpOptions;
-	}
-
-	public void setTcpOptions(TcpOptions tcpOptions) {
-		this.tcpOptions = tcpOptions;
 	}
 }

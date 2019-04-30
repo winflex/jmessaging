@@ -8,7 +8,7 @@ import messaging.util.Endpoint;
  * 
  * @author winflex
  */
-public class RpcClientOptions {
+public class RpcClientOptions extends TcpOptions {
 
 	/**
 	 * 服务端地址
@@ -42,8 +42,6 @@ public class RpcClientOptions {
 	 */
 	private String proxy = "jdk";
 	
-	private TcpOptions tcpOptions;
-
 	public RpcClientOptions(Endpoint endpoint) {
 		this.endpoint = endpoint;
 	}
@@ -108,13 +106,5 @@ public class RpcClientOptions {
 			throw new IllegalArgumentException("The proxy can't be null");
 		}
 		this.proxy = proxy;
-	}
-
-	public TcpOptions getTcpOptions() {
-		return tcpOptions;
-	}
-
-	public void setTcpOptions(TcpOptions tcpOptions) {
-		this.tcpOptions = tcpOptions;
 	}
 }

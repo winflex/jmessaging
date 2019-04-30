@@ -83,14 +83,14 @@ public class RpcServer {
 			this.workerGroup = new EpollEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
 			boostrap.channel(EpollServerSocketChannel.class);
 			boostrap.option(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-			NettyUtils.fillTcpOptions(boostrap, options.getTcpOptions(), true);
+			NettyUtils.fillTcpOptions(boostrap, options, true);
 			boostrap.childOption(EpollChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		} else {
 			this.bossGroup = new NioEventLoopGroup(1, new NamedThreadFactory("RpcServer-IoAcceptor"));
 			this.workerGroup = new NioEventLoopGroup(options.getIoThreads(), new NamedThreadFactory("RpcServer-IoWorker"));
 			boostrap.channel(NioServerSocketChannel.class);
 			boostrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-			NettyUtils.fillTcpOptions(boostrap, options.getTcpOptions(), false);
+			NettyUtils.fillTcpOptions(boostrap, options, false);
 			boostrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		}
 		boostrap.group(bossGroup, workerGroup);
