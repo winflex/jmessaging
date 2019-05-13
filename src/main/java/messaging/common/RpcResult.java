@@ -5,10 +5,17 @@ package messaging.common;
 
 import java.io.Serializable;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 /**
  *
  * @author winflex
  */
+@Getter
+@Setter
+@ToString
 public class RpcResult implements Serializable {
 
 	public static final RpcResult newSuccessResult(Object data) {
@@ -28,22 +35,6 @@ public class RpcResult implements Serializable {
 	private Object result;
 
 	private Throwable cause;
-
-	public Object getResult() {
-		return result;
-	}
-
-	public void setResult(Object result) {
-		this.result = result;
-	}
-
-	public Throwable getCause() {
-		return cause;
-	}
-
-	public void setCause(Throwable cause) {
-		this.cause = cause;
-	}
 
 	public boolean isSuccess() {
 		return cause == null;

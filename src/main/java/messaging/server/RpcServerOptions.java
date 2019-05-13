@@ -1,5 +1,8 @@
 package messaging.server;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import messaging.common.TcpOptions;
 
 /**
@@ -7,6 +10,9 @@ import messaging.common.TcpOptions;
  * 
  * @author winflex
  */
+@Getter
+@Setter
+@ToString
 public class RpcServerOptions extends TcpOptions {
 
 	/**
@@ -27,44 +33,12 @@ public class RpcServerOptions extends TcpOptions {
 	/**
 	 * 空闲多久后关闭连接, <= 0时不启用
 	 */
-	private int idleTimeoutMillis = 90 * 1000;
-	
+	private int idleTimeout = 90 * 1000;
+
 	public RpcServerOptions(int port) {
 		if (port <= 0) {
 			throw new IllegalArgumentException("port must be positive");
 		}
 		this.port = port;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public String getBindIp() {
-		return bindIp;
-	}
-
-	public void setBindIp(String bindIp) {
-		this.bindIp = bindIp;
-	}
-
-	public int getIoThreads() {
-		return ioThreads;
-	}
-
-	public void setIoThreads(int ioThreads) {
-		this.ioThreads = ioThreads;
-	}
-
-	public int getIdleTimeout() {
-		return idleTimeoutMillis;
-	}
-
-	public void setIdleTimeout(int idleTimeoutMillis) {
-		this.idleTimeoutMillis = idleTimeoutMillis;
 	}
 }

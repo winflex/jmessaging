@@ -2,10 +2,17 @@ package messaging.common.protocol;
 
 import java.io.Serializable;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 /**
  * 
  * @author winflex
  */
+@Getter
+@Setter
+@ToString
 public class RpcMessage implements Serializable {
 
 	private static final long serialVersionUID = 9009500469286134089L;
@@ -19,35 +26,4 @@ public class RpcMessage implements Serializable {
 	private byte serializerCode;
 	private Object data;
 
-	public byte getSerializerCode() {
-		return serializerCode;
-	}
-
-	public void setSerializerCode(byte serializerCode) {
-		this.serializerCode = serializerCode;
-	}
-
-	public byte getType() {
-		return type;
-	}
-
-	public void setType(byte type) {
-		this.type = type;
-	}
-
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public Object getData() {
-		return data;
-	}
-
-	public void setData(Object data) {
-		this.data = data;
-	}
 }

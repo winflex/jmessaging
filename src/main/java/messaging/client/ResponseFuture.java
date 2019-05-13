@@ -8,9 +8,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import lombok.extern.slf4j.Slf4j;
 import messaging.util.concurrent.DefaultPromise;
 import messaging.util.concurrent.NamedThreadFactory;
 
@@ -19,11 +17,10 @@ import messaging.util.concurrent.NamedThreadFactory;
  * 
  * @author winflex
  */
+@Slf4j
 public class ResponseFuture<T> extends DefaultPromise<T> {
 
 	private static final long serialVersionUID = 275517284412500195L;
-
-	private static final Logger logger = LoggerFactory.getLogger(ResponseFuture.class);
 
 	private static final ConcurrentMap<Long, ResponseFuture<?>> inflightFutures = new ConcurrentHashMap<>();
 
@@ -33,7 +30,7 @@ public class ResponseFuture<T> extends DefaultPromise<T> {
 	public static void doneWithResult(long futureId, Object result) {
 		ResponseFuture<?> future = inflightFutures.get(futureId);
 		if (future == null) {
-			logger.warn("No future correlate with " + futureId + ", maybe it's timed out");
+			log.warn("No future correlate with " + futureId + ", maybe it's timed out");
 			return;
 		}
 		future.cancelTimeoutTask();
@@ -43,7 +40,7 @@ public class ResponseFuture<T> extends DefaultPromise<T> {
 	public static void doneWithException(long futureId, Throwable cause) {
 		ResponseFuture<?> future = inflightFutures.get(futureId);
 		if (future == null) {
-			logger.warn("No future correlate with " + futureId + ", maybe it's timed out");
+			log.warn("No future correlate with " + futureId + ", maybe it's timed out");
 			return;
 		}
 		future.cancelTimeoutTask();

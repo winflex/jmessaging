@@ -2,10 +2,17 @@ package messaging.common.protocol;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 /**
  * 
  * @author winflex
  */
+@Getter
+@Setter
+@ToString
 public class RpcRequest extends RpcMessage {
 
 	private static final long serialVersionUID = -9169741435572800622L;
@@ -22,14 +29,5 @@ public class RpcRequest extends RpcMessage {
 		setOneWay(oneWay);
 		setType(TYPE_REQUEST);
 	}
-
-	public boolean isOneWay() {
-		return oneWay;
-	}
-
-	public void setOneWay(boolean oneWay) {
-		this.oneWay = oneWay;
-	}
-	
 	private static final AtomicLong sequence = new AtomicLong();
 }

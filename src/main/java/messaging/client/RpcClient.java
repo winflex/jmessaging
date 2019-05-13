@@ -5,9 +5,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -24,6 +21,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.extern.slf4j.Slf4j;
 import messaging.client.ChannelGroup.HealthChecker;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
@@ -40,9 +38,8 @@ import messaging.util.concurrent.NamedThreadFactory;
  * 
  * @author winflex
  */
+@Slf4j
 public class RpcClient {
-	private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
-
 	private final RpcClientOptions options; // 配置
 	private EventLoopGroup workerGroup;
 	private final ChannelGroup channelGroup;
@@ -80,9 +77,9 @@ public class RpcClient {
 			
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
-				logger.info("Channel connected, channel = {}", ch);
+				log.info("Channel connected, channel = {}", ch);
 				ch.closeFuture().addListener((future) -> {
-					logger.info("Channel disconnected, channel = {}", ch);
+					log.info("Channel disconnected, channel = {}", ch);
 				});
 				
 				final ChannelPipeline pl = ch.pipeline();

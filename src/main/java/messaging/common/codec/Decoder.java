@@ -9,12 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import lombok.extern.slf4j.Slf4j;
 import messaging.common.RpcResult;
 import messaging.common.protocol.HeartbeatMessage;
 import messaging.common.protocol.RpcMessage;
@@ -37,9 +35,8 @@ import messaging.common.protocol.RpcResponse;
  * @author winflex
  * 
  */
+@Slf4j
 public class Decoder extends ByteToMessageDecoder {
-
-	private static final Logger logger = LoggerFactory.getLogger(Decoder.class);
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -50,7 +47,7 @@ public class Decoder extends ByteToMessageDecoder {
 		}
 
 		if (in.readShort() != MAGIC) {
-			logger.error("Recieved an unknown packet, the channel({}) will be closed", ctx.channel());
+			log.error("Recieved an unknown packet, the channel({}) will be closed", ctx.channel());
 			return;
 		}
 
@@ -73,7 +70,7 @@ public class Decoder extends ByteToMessageDecoder {
 		} else if (type == RpcMessage.TYPE_HEARTBEAT) {
 			out.add(new HeartbeatMessage());
 		} else {
-			logger.error("Recieved an unknown packet with type {}, the channel({}) will be closed", type,
+			log.error("Recieved an unknown packet with type {}, the channel({}) will be closed", type,
 					ctx.channel());
 		}
 	}

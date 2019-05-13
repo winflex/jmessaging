@@ -2,11 +2,18 @@ package messaging.common;
 
 import java.util.BitSet;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 /**
  * TCP相关的一些配置项
  * 
  * @author winflex
  */
+@Getter
+@Setter
+@ToString
 public class TcpOptions {
 	private static final int BIT_KEEP_ALIVE = 0;
 	private static final int BIT_SEND_BUFFER = 1;
@@ -28,10 +35,6 @@ public class TcpOptions {
 
 	private final BitSet bitSet = new BitSet(8);
 
-	public boolean isKeepAlive() {
-		return keepAlive;
-	}
-
 	public void setKeepAlive(boolean keepAlive) {
 		this.keepAlive = keepAlive;
 		bitSet.set(BIT_KEEP_ALIVE);
@@ -39,10 +42,6 @@ public class TcpOptions {
 
 	public boolean isKeepAliveSet() {
 		return bitSet.get(BIT_KEEP_ALIVE);
-	}
-
-	public int getSendBuffer() {
-		return sendBuffer;
 	}
 
 	public void setSendBuffer(int sendBuffer) {
@@ -54,10 +53,6 @@ public class TcpOptions {
 		return bitSet.get(BIT_SEND_BUFFER);
 	}
 
-	public int getRecieveBuffer() {
-		return recieveBuffer;
-	}
-
 	public void setRecieveBuffer(int recieveBuffer) {
 		this.recieveBuffer = recieveBuffer;
 		bitSet.set(BIT_RECIEVE_BUFFER);
@@ -65,10 +60,6 @@ public class TcpOptions {
 
 	public boolean isRecieveBufferSet() {
 		return bitSet.get(BIT_RECIEVE_BUFFER);
-	}
-
-	public boolean isReuseAddress() {
-		return reuseAddress;
 	}
 
 	public void setReuseAddress(boolean reuseAddress) {
@@ -80,10 +71,6 @@ public class TcpOptions {
 		return bitSet.get(BIT_REUSE_ADDRESS);
 	}
 
-	public int getLinger() {
-		return linger;
-	}
-
 	public void setLinger(int linger) {
 		this.linger = linger;
 		bitSet.set(BIT_LINGER);
@@ -91,10 +78,6 @@ public class TcpOptions {
 
 	public boolean isLingerSet() {
 		return bitSet.get(BIT_LINGER);
-	}
-
-	public int getBacklog() {
-		return backlog;
 	}
 
 	public void setBacklog(int backlog) {
@@ -106,10 +89,6 @@ public class TcpOptions {
 		return bitSet.get(BIT_BACKLOG);
 	}
 
-	public int getTimeout() {
-		return timeout;
-	}
-
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
 		bitSet.set(BIT_TIMEOUT);
@@ -117,10 +96,6 @@ public class TcpOptions {
 
 	public boolean isTimeoutSet() {
 		return bitSet.get(BIT_TIMEOUT);
-	}
-
-	public boolean isNoDelay() {
-		return noDelay;
 	}
 
 	public void setNoDelay(boolean noDelay) {

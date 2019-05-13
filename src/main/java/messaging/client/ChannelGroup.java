@@ -16,13 +16,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import lombok.extern.slf4j.Slf4j;
 import messaging.util.ExceptionUtils;
 import messaging.util.concurrent.NamedThreadFactory;
 
@@ -32,9 +30,8 @@ import messaging.util.concurrent.NamedThreadFactory;
  * 
  * @author winflex
  */
+@Slf4j
 public class ChannelGroup {
-
-	private static final Logger logger = LoggerFactory.getLogger(ChannelGroup.class);
 
 	private static final ScheduledExecutorService reconnectExecutor = Executors
 			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Reconnect-Thread", true));
@@ -148,7 +145,7 @@ public class ChannelGroup {
 							if (f.isSuccess()) {
 								channels.set(index, f.channel());
 							} else {
-								logger.error("Reconnect failed", f.cause());
+								log.error("Reconnect failed", f.cause());
 							}
 						}
 					});
