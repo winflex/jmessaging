@@ -1,8 +1,5 @@
 package messaging.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -10,6 +7,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
+import lombok.extern.slf4j.Slf4j;
 import messaging.common.TcpOptions;
 
 /**
@@ -17,13 +15,12 @@ import messaging.common.TcpOptions;
  * 
  * @author winflex
  */
+@Slf4j
 public class NettyUtils {
-
-	private static final Logger logger = LoggerFactory.getLogger(NettyUtils.class);
 
 	public static final ChannelFutureListener LOGGING_LISTENER = (future) -> {
 		if (!future.isSuccess()) {
-			logger.error("Write message failed", future.cause());
+			log.error("Write message failed", future.cause());
 		}
 	};
 

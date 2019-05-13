@@ -4,13 +4,11 @@ import static messaging.common.protocol.RpcMessage.TYPE_RESPONSE;
 
 import java.util.concurrent.Executor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
+import lombok.extern.slf4j.Slf4j;
 import messaging.common.RpcException;
 import messaging.common.RpcResult;
 import messaging.common.protocol.HeartbeatMessage;
@@ -23,9 +21,8 @@ import messaging.util.concurrent.SynchronousExecutor;
  * 
  * @author winflex
  */
+@Slf4j
 public class ServerHandler extends SimpleChannelInboundHandler<RpcMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(ServerHandler.class);
-
 	private final RpcServer rpcServer;
 
 	public ServerHandler(RpcServer rpcServer) {
@@ -42,11 +39,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMessage> {
 	}
 
 	private void handleHeartbeat(ChannelHandlerContext ctx, HeartbeatMessage msg) {
-		logger.debug("Revieved heartbeat on channel({})", ctx.channel());
+		log.debug("Revieved heartbeat on channel({})", ctx.channel());
 	}
 
 	private void handleRequest(ChannelHandlerContext ctx, RpcRequest msg) {
-		logger.debug("Recieved request({}) on channel({})", msg, ctx.channel());
+		log.debug("Recieved request({}) on channel({})", msg, ctx.channel());
 		Object request = msg.getData();
 		IRequestHandler<Object> handler = rpcServer.getHandler(request.getClass().getName());
 		if (handler == null) {
@@ -61,7 +58,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMessage> {
 					Context context = new Context(msg, ctx.channel(), executor);
 					handler.handleRequest(context, request);
 				} catch (RuntimeException e) {
-					logger.error(e.getMessage(), e);
+					log.error(e.getMessage(), e);
 					if (!msg.isOneWay()) {
 						respondWithException(ctx.channel(), msg.getId(), e);
 					}
@@ -92,18 +89,18 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMessage> {
 		response.setData(RpcResult.newFailureResult(cause));
 		NettyUtils.writeAndFlush(ch, response);
 	}
-	
+
 	@Override
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
 		if (evt instanceof IdleStateEvent) {
 			// idle timeout
-			logger.warn("Channel has passed idle timeout, channel = {}", ctx.channel());
+			log.warn("Channel has passed idle timeout, channel = {}", ctx.channel());
 			ctx.close();
 		}
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		logger.error(cause.getMessage(), cause);
+		log.error(cause.getMessage(), cause);
 	}
 }

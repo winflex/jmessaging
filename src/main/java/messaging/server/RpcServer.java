@@ -6,9 +6,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -26,6 +23,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.extern.slf4j.Slf4j;
 import messaging.common.RpcException;
 import messaging.common.codec.Decoder;
 import messaging.common.codec.Encoder;
@@ -38,9 +36,8 @@ import messaging.util.concurrent.NamedThreadFactory;
  * 
  * @author winflex
  */
+@Slf4j
 public class RpcServer {
-	private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
-
 	private final RpcServerOptions options;
 
 	private Executor executor;
@@ -69,7 +66,7 @@ public class RpcServer {
 
 		if (f.isSuccess()) {
 			this.serverChannel = f.channel();
-			logger.info("Server is now listening on {}:{}", options.getBindIp(), options.getPort());
+			log.info("Server is now listening on {}:{}", options.getBindIp(), options.getPort());
 		} else {
 			throw new RpcException(f.cause());
 		}
@@ -98,9 +95,9 @@ public class RpcServer {
 
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
-				logger.info("Channel connected, channel = {}", ch);
+				log.info("Channel connected, channel = {}", ch);
 				ch.closeFuture().addListener((future) -> {
-					logger.info("Channel disconnected, channel = {}", ch);
+					log.info("Channel disconnected, channel = {}", ch);
 				});
 				ChannelPipeline pl = ch.pipeline();
 				
@@ -130,7 +127,7 @@ public class RpcServer {
 		if (workerGroup != null) {
 			workerGroup.shutdownGracefully();
 		}
-		logger.info("Server shutdown");
+		log.info("Server shutdown");
 		closeFuture.setSuccess(null);
 	}
 
